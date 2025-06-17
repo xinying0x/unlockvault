@@ -70,10 +70,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const updateData: any = {};
         
         if (newEmail) {
-          // Check if new email already exists
+          // Check if new email already exists (but not for the current user)
           const emailExists = await collection.findOne({ 
-            email: newEmail, 
-            email: { $ne: currentEmail } 
+            $and: [
+              { email: newEmail },
+              { email: { $ne: currentEmail } }
+            ]
           });
           
           if (emailExists) {
