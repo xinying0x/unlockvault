@@ -2,6 +2,7 @@ const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
 
 // MongoDB connection string - replace with your actual connection string
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://username:password@cluster.mongodb.net/unlockvault?retryWrites=true&w=majority';
