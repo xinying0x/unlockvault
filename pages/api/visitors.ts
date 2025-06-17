@@ -1,74 +1,69 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import fs from 'fs';
-import path from 'path';
-
-interface Visit {
-  ip: string;
-  country: string;
-  city?: string;
-  bot: boolean;
-  adBlock: boolean;
-  vpn: boolean;
-  timestamp: string;
-  date: string;
-  browser?: string;
-  os?: string;
-  deviceType?: string;
-  trafficSource?: string;
-}
+import { NextApiRequest, NextApiResponse } from 'next';
+import clientPromise from '../../lib/mongodb';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
   try {
-    const visitsPath = path.join(process.cwd(), 'data', 'visits.json');
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const collection = db.collection('visits');
+
+    const { range = '7d', page = '1', limit = '50' } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Calculate date filter based on range
+    let dateFilter = {};
+    const now = new Date();
     
-    let visits: Visit[] = [];
-    try {
-      const visitsData = fs.readFileSync(visitsPath, 'utf-8');
-      visits = JSON.parse(visitsData);
-    } catch (parseError) {
-      console.error('Error parsing visits.json:', parseError);
-      // If JSON is corrupted, reset to empty array
-      visits = [];
-      fs.writeFileSync(visitsPath, '[]', 'utf-8');
+    switch (range) {
+      case '24h':
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        dateFilter = { timestamp: { $gte: yesterday.toISOString() } };
+        break;
+      case '7d':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        dateFilter = { timestamp: { $gte: weekAgo.toISOString() } };
+        break;
+      case '30d':
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        dateFilter = { timestamp: { $gte: monthAgo.toISOString() } };
+        break;
+      default:
+        // No date filter for 'all'
+        break;
     }
 
-    // Calculate statistics
-    const totalVisits = visits.length;
-    const uniqueIPs = new Set(visits.map(v => v.ip)).size;
-    const vpnUsers = visits.filter(v => v.vpn).length;
-    const botTraffic = visits.filter(v => v.bot).length;
-    const adBlockUsers = visits.filter(v => v.adBlock).length;
+    // Get visitors with pagination
+    const visitors = await collection
+      .find(dateFilter)
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .toArray();
 
-    // Countries breakdown
-    const countries: { [key: string]: number } = {};
-    visits.forEach(visit => {
-      countries[visit.country] = (countries[visit.country] || 0) + 1;
-    });
+    // Get total count for pagination
+    const total = await collection.countDocuments(dateFilter);
 
-    // Sort visits by most recent
-    const sortedVisits = visits.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-
-    const stats = {
-      totalVisits,
-      uniqueIPs,
-      countries,
-      vpnUsers,
-      botTraffic,
-      adBlockUsers
-    };
+    // Remove MongoDB _id from response
+    const cleanVisitors = visitors.map(({ _id, ...visitor }) => visitor);
 
     res.status(200).json({
-      visits: sortedVisits,
-      stats
+      visitors: cleanVisitors,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
     });
   } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Visitors API error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 } 
