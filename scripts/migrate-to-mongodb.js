@@ -1,6 +1,7 @@
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 // MongoDB connection string - replace with your actual connection string
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://username:password@cluster.mongodb.net/unlockvault?retryWrites=true&w=majority';
@@ -13,6 +14,28 @@ async function migrateData() {
     console.log('Connected to MongoDB');
     
     const db = client.db('unlockvault');
+    
+    // Create default admin user
+    const usersCollection = db.collection('users');
+    const existingAdmin = await usersCollection.findOne({ 
+      email: 'admin@unlockvault.xyz', 
+      role: 'admin' 
+    });
+    
+    if (!existingAdmin) {
+      const defaultAdmin = {
+        email: 'admin@unlockvault.xyz',
+        role: 'admin',
+        passwordHash: await bcrypt.hash('admin123456', 12),
+        createdAt: new Date().toISOString(),
+        lastLogin: null
+      };
+      
+      await usersCollection.insertOne(defaultAdmin);
+      console.log('Created default admin user (email: admin@unlockvault.xyz, password: admin123456)');
+    } else {
+      console.log('Default admin user already exists');
+    }
     
     // Migrate offers
     const offersPath = path.join(__dirname, '../data/offers.json');
@@ -87,12 +110,28 @@ async function migrateData() {
       // Clear existing data
       await settingsCollection.deleteMany({});
       
-      // Insert settings as a single document
-      await settingsCollection.insertOne(settingsData);
+      // Insert settings as a document with type
+      await settingsCollection.insertOne({
+        type: 'general',
+        ...settingsData,
+        lastModified: new Date().toISOString()
+      });
       console.log('Migrated settings');
+    } else {
+      // Create default settings if file doesn't exist
+      const settingsCollection = db.collection('settings');
+      await settingsCollection.insertOne({
+        type: 'general',
+        useDummyStats: false,
+        lastModified: new Date().toISOString()
+      });
+      console.log('Created default settings');
     }
     
     console.log('Migration completed successfully!');
+    console.log('\nDefault Login Credentials:');
+    console.log('Email: admin@unlockvault.xyz');
+    console.log('Password: admin123456');
     
   } catch (error) {
     console.error('Migration failed:', error);

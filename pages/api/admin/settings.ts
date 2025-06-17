@@ -1,33 +1,66 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import fs from 'fs/promises';
-import path from 'path';
+import clientPromise from '../../../lib/mongodb';
 import { verifyJwt } from '../../../lib/jwt';
 import { serialize } from 'cookie';
-
-const SETTINGS_FILE = path.resolve(process.cwd(), 'data', 'settings.json');
+import { updateUserCredentials } from '../../../lib/auth';
 
 interface Settings {
   useDummyStats: boolean;
+  adminEmail?: string;
+  lastModified?: string;
 }
 
 async function readSettings(): Promise<Settings> {
   try {
-    const content = await fs.readFile(SETTINGS_FILE, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      // If file doesn't exist, create it with default settings
-      const defaultSettings: Settings = { useDummyStats: false };
-      await fs.writeFile(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf-8');
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const collection = db.collection('settings');
+    
+    let settings = await collection.findOne({ type: 'general' });
+    
+    if (!settings) {
+      // Create default settings
+      const defaultSettings: Settings = { 
+        useDummyStats: false,
+        lastModified: new Date().toISOString()
+      };
+      
+      await collection.insertOne({ 
+        type: 'general', 
+        ...defaultSettings 
+      });
+      
       return defaultSettings;
     }
-    console.error('Error reading settings file:', error);
+    
+    const { _id, type, ...cleanSettings } = settings;
+    return cleanSettings as Settings;
+  } catch (error) {
+    console.error('Error reading settings:', error);
     throw error;
   }
 }
 
 async function writeSettings(settings: Settings): Promise<void> {
-  await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+  try {
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const collection = db.collection('settings');
+    
+    await collection.updateOne(
+      { type: 'general' },
+      { 
+        $set: { 
+          ...settings, 
+          lastModified: new Date().toISOString() 
+        } 
+      },
+      { upsert: true }
+    );
+  } catch (error) {
+    console.error('Error writing settings:', error);
+    throw error;
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -38,8 +71,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ message: 'Authentication required' });
   }
 
+  let decoded;
   try {
-    const decoded = verifyJwt(token);
+    decoded = verifyJwt(token);
     if (decoded.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden: Admins only' });
     }
@@ -63,15 +97,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.error('API Error (GET /api/admin/settings):', error);
         return res.status(500).json({ message: 'Failed to fetch settings' });
       }
+
     case 'PUT':
       try {
-        const newSettings: Settings = req.body;
+        const { newEmail, newPassword, ...otherSettings } = req.body;
+        
+        // Update user credentials if provided
+        if (newEmail || newPassword) {
+          const success = await updateUserCredentials(
+            decoded.email, 
+            newEmail, 
+            newPassword
+          );
+          
+          if (!success) {
+            return res.status(400).json({ message: 'Failed to update credentials' });
+          }
+          
+          // If email changed, update token
+          if (newEmail) {
+            const newToken = require('../../../lib/jwt').signJwt({ 
+              email: newEmail, 
+              role: decoded.role 
+            });
+            
+            res.setHeader('Set-Cookie', [
+              `auth-token=${newToken}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+            ]);
+          }
+        }
+        
+        // Update general settings
+        const newSettings: Settings = {
+          ...otherSettings,
+          adminEmail: newEmail || decoded.email
+        };
+        
         await writeSettings(newSettings);
-        return res.status(200).json(newSettings);
+        return res.status(200).json({ 
+          message: 'Settings updated successfully',
+          settings: newSettings 
+        });
       } catch (error) {
         console.error('API Error (PUT /api/admin/settings):', error);
         return res.status(500).json({ message: 'Failed to update settings' });
       }
+
     default:
       res.setHeader('Allow', ['GET', 'PUT']);
       return res.status(405).end(`Method ${req.method} Not Allowed`);

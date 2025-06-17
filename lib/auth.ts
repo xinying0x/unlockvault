@@ -1,15 +1,16 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import clientPromise from './mongodb';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@unlockvault.xyz';
-// New password: 'admin123456'
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2b$12$xEnJHMRhk0jdYW3WnGcc0eWK.uz8p4nZjgJtE95i9wxC48LFpNLs2';
 
 export interface AdminUser {
   email: string;
   role: string;
   loginTime: string;
+  passwordHash?: string;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 export function generateToken(user: AdminUser): string {
@@ -25,27 +26,99 @@ export function verifyToken(token: string): AdminUser | null {
 }
 
 export async function validateCredentials(email: string, password: string): Promise<boolean> {
-  console.log('Validating credentials:', { 
-    email, 
-    passwordLength: password.length,
-    providedEmail: email,
-    expectedEmail: ADMIN_EMAIL,
-    emailMatch: email === ADMIN_EMAIL
-  });
-  
-  if (email !== ADMIN_EMAIL) {
-    console.log('Email mismatch:', { provided: email, expected: ADMIN_EMAIL });
+  try {
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const usersCollection = db.collection('users');
+    
+    // Find user by email
+    const user = await usersCollection.findOne({ email, role: 'admin' });
+    
+    if (!user) {
+      console.log('User not found:', email);
+      return false;
+    }
+    
+    // Compare password
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    
+    if (isValid) {
+      // Update last login time
+      await usersCollection.updateOne(
+        { email },
+        { $set: { lastLogin: new Date().toISOString() } }
+      );
+    }
+    
+    console.log('Password validation result:', { isValid, email });
+    return isValid;
+  } catch (error) {
+    console.error('Error validating credentials:', error);
     return false;
   }
-  
-  const isValid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
-  console.log('Password validation result:', { 
-    isValid,
-    passwordLength: password.length,
-    expectedPassword: 'admin123456'
-  });
-  
-  return isValid;
+}
+
+export async function createDefaultAdmin(): Promise<void> {
+  try {
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const usersCollection = db.collection('users');
+    
+    // Check if admin already exists
+    const existingAdmin = await usersCollection.findOne({ 
+      email: 'admin@unlockvault.xyz', 
+      role: 'admin' 
+    });
+    
+    if (!existingAdmin) {
+      const defaultAdmin = {
+        email: 'admin@unlockvault.xyz',
+        role: 'admin',
+        passwordHash: await bcrypt.hash('admin123456', 12),
+        createdAt: new Date().toISOString(),
+        lastLogin: null
+      };
+      
+      await usersCollection.insertOne(defaultAdmin);
+      console.log('Default admin user created');
+    }
+  } catch (error) {
+    console.error('Error creating default admin:', error);
+  }
+}
+
+export async function updateUserCredentials(
+  currentEmail: string, 
+  newEmail?: string, 
+  newPassword?: string
+): Promise<boolean> {
+  try {
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const usersCollection = db.collection('users');
+    
+    const updateData: any = {};
+    
+    if (newEmail) {
+      updateData.email = newEmail;
+    }
+    
+    if (newPassword) {
+      updateData.passwordHash = await bcrypt.hash(newPassword, 12);
+    }
+    
+    updateData.lastModified = new Date().toISOString();
+    
+    const result = await usersCollection.updateOne(
+      { email: currentEmail, role: 'admin' },
+      { $set: updateData }
+    );
+    
+    return result.matchedCount > 0;
+  } catch (error) {
+    console.error('Error updating user credentials:', error);
+    return false;
+  }
 }
 
 export async function hashPassword(password: string): Promise<string> {

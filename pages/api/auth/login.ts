@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { validateCredentials, checkRateLimit, logFailedAttempt } from '../../../lib/auth';
+import { validateCredentials, checkRateLimit, logFailedAttempt, createDefaultAdmin } from '../../../lib/auth';
 import { signJwt } from '../../../lib/jwt';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,6 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     console.log('Login attempt:', { email, clientIP });
+    
+    // Ensure default admin exists
+    await createDefaultAdmin();
     
     const isValid = await validateCredentials(email, password);
     
