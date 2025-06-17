@@ -1,0 +1,30 @@
+[
+  {
+    "id": "operating-systems",
+    "name": "Operating Systems",
+    "image": "/images/categories/os.jpg",
+    "description": "Windows, macOS, and Linux operating systems",
+    "href": "/category/operating-systems"
+  },
+  {
+    "id": "productivity",
+    "name": "Productivity",
+    "image": "/images/categories/productivity.jpg",
+    "description": "Office suites and productivity tools",
+    "href": "/category/productivity"
+  },
+  {
+    "id": "security",
+    "name": "Security",
+    "image": "/images/categories/security.jpg",
+    "description": "Antivirus and security software",
+    "href": "/category/security"
+  },
+  {
+    "id": "multimedia",
+    "name": "Multimedia",
+    "image": "/images/categories/multimedia.jpg",
+    "description": "Video, audio, and image editing tools",
+    "href": "/category/multimedia"
+  }
+]

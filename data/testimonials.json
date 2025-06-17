@@ -1,0 +1,29 @@
+[
+  {
+    "id": "1",
+    "name": "John Doe",
+    "text": "This is an amazing product! I highly recommend it.",
+    "rating": 5,
+    "avatar": "https://i.pinimg.com/736x/f3/c7/c6/f3c7c6f174bd78cc7077fcc3b05e03aa.jpg",
+    "createdAt": "2023-01-15T10:00:00Z",
+    "status": "active"
+  },
+  {
+    "id": "2",
+    "name": "Jane Smith",
+    "text": "Great service and very helpful features.",
+    "rating": 4,
+    "avatar": "https://i.pinimg.com/736x/8e/d4/04/8ed4040e06e68818a07c3e15ac7c18dc.jpg",
+    "createdAt": "2023-02-20T11:30:00Z",
+    "status": "active"
+  },
+  {
+    "id": "3",
+    "name": "Peter Jones",
+    "text": "Could be better, but overall a good experience.",
+    "rating": 3,
+    "avatar": "https://i.pinimg.com/736x/1a/b7/fe/1ab7fef724ddd676f715fe968dc63419.jpg",
+    "createdAt": "2023-03-01T14:45:00Z",
+    "status": "active"
+  }
+] 

@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /admin/*
+Disallow: /api/*
+
+# Host
+Host: https://unlockvault.com
+
+# Sitemaps
+Sitemap: https://unlockvault.com/sitemap.xml
