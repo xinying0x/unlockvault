@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import clientPromise from '../../lib/mongodb'
+import { cache } from '../../lib/cache'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -8,6 +9,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Check cache first (cache for 2 minutes)
+    const cacheKey = 'stats-general';
+    const cachedStats = cache.get(cacheKey);
+    
+    if (cachedStats) {
+      return res.status(200).json(cachedStats);
+    }
+
     const client = await clientPromise
     const db = client.db('unlockvault')
 
@@ -42,6 +51,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       todayVisits,
       totalTestimonials
     }
+
+    // Cache the results for 2 minutes
+    cache.set(cacheKey, stats, 2);
 
     res.status(200).json(stats)
   } catch (error) {
