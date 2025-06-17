@@ -45,28 +45,27 @@ const OfferDetailPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/offers/${offerId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setOffer({ ...data, lockerLinks: data.lockerLinks || {} });
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Offer not found');
-        setOffer(null);
+      const response = await fetch(`/api/offers/${offerId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      if (!data) {
+        throw new Error('No data received');
+      }
+
+      setOffer({ ...data, lockerLinks: data.lockerLinks || {} });
     } catch (err: any) {
       console.error('Failed to fetch offer:', err);
-      if (err instanceof TypeError) {
-        console.error("This might be a network error or CORS issue.");
-      } else if (err instanceof SyntaxError) {
-        console.error("This is likely a JSON parsing error. Check the API response format.");
-      }
-      
-      let errorMessage = 'Failed to load offer data. Please try again later.';
-      if (err.message) {
-        errorMessage += ` (Details: ${err.message})`;
-      }
-      setError(errorMessage);
+      setError(err.message || 'Failed to load offer data. Please try again later.');
       setOffer(null);
     } finally {
       setLoading(false);
@@ -82,15 +81,18 @@ const OfferDetailPage = () => {
 
   // Check VPN/Country
   useEffect(() => {
-    fetch('https://ip-api.com/json')
-      .then((res) => res.json())
-      .then((data) => {
-        setCountryCode(data.countryCode?.toLowerCase() || 'us');
-        setIsVpn(Boolean(data.proxy || data.hosting));
-      })
-      .catch(() => {
+    const checkLocation = async () => {
+      try {
+        const response = await fetch('https://ipwho.is/?fields=country_code,security');
+        const data = await response.json();
+        setCountryCode(data.country_code?.toLowerCase() || 'us');
+        setIsVpn(Boolean(data.security?.vpn));
+      } catch (error) {
+        console.error('Failed to fetch location:', error);
         setCountryCode('us');
-      });
+      }
+    };
+    checkLocation();
   }, []);
 
   const formatTime = (s: number) => {
@@ -225,24 +227,21 @@ const OfferDetailPage = () => {
                 </span>
               )}
 
-              {/* CPA Unlock Button */}
-              {timer > 0 ? (
-                <button
-                  onClick={() => window.open(getCpaLink(), '_blank')}
-                  className="w-full bg-green-600 text-white font-bold py-4 rounded-xl text-xl hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-3"
-                >
-                  {getButtonText(offer.type)} ({formatTime(timer)})
-                  <span className="ml-2 text-yellow-300"></span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => window.open(getCpaLink(), '_blank')}
-                  className="w-full bg-green-600 text-white font-bold py-4 rounded-xl text-xl hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-3"
-                >
-                  {getButtonText(offer.type)}
-                  <span className="ml-2 text-yellow-300">✅</span>
-                </button>
-              )}
+              {/* Timer */}
+              <div className="mb-6 text-center">
+                <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
+                <div className="text-2xl font-bold text-purple-400">{formatTime(timer)}</div>
+              </div>
+
+              {/* Unlock Button */}
+              <a
+                href={getCpaLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-4 px-6 text-center bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                {getButtonText(offer.type)}
+              </a>
 
               {/* VPN Warning */}
               {isVpn && (

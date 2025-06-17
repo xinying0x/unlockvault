@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import fs from 'fs/promises'
-import path from 'path'
+import clientPromise from '../../lib/mongodb'
 import geoip from 'geoip-lite'
 import UAParser from 'ua-parser-js'
 
@@ -36,119 +35,126 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { adBlock, offerId } = req.body || {}
-  // Get client IP, support x-forwarded-for
-  const forwarded = req.headers['x-forwarded-for']
-  const ip = Array.isArray(forwarded)
-    ? forwarded[0]
-    : forwarded || req.socket.remoteAddress || ''
-  const cleanIp = ip.split(',')[0].trim()
-
-  // Check if this is a local/development IP
-  const isLocalIP = cleanIp === '::1' || cleanIp === '127.0.0.1' || cleanIp.startsWith('192.168.') || cleanIp.startsWith('10.') || cleanIp.startsWith('172.') || cleanIp.startsWith('::ffff:');
-
-  // Bot detection via User-Agent
-  const ua = req.headers['user-agent'] || ''
-  const bot = /bot|crawl|spider|slurp|fetch|monitor|scan|ping|libwww|curl|wget|python-requests/i.test(ua)
-
-  // Parse User-Agent for browser, OS, and device
-  const parser = new UAParser(ua);
-  const browser = parser.getBrowser().name || 'Unknown';
-  const os = parser.getOS().name || 'Unknown';
-  const deviceType = parser.getDevice().type || 'desktop'; // 'desktop', 'mobile', 'tablet'
-
-  // Get referrer
-  const referrer = req.headers['referer'] || req.headers['x-referer'] || 'Direct';
-  const referrerString = Array.isArray(referrer) ? referrer[0] : referrer;
-  let trafficSource = 'Direct';
-  if (referrerString !== 'Direct') {
-    try {
-      const url = new URL(referrerString);
-      if (url.hostname.includes('google.') || url.hostname.includes('bing.') || url.hostname.includes('yahoo.')) {
-        trafficSource = 'Search Engine';
-      } else if (url.hostname.includes('facebook.') || url.hostname.includes('twitter.') || url.hostname.includes('linkedin.') || url.hostname.includes('instagram.')) {
-        trafficSource = 'Social Media';
-      } else if (url.hostname === req.headers.host) { // Internal referrer
-        trafficSource = 'Internal';
-      } else {
-        trafficSource = 'Referral';
-      }
-    } catch (e) {
-      trafficSource = 'Referral'; // Fallback for malformed URLs
-    }
-  }
-
-  let country, finalIp, vpn = false;
-
-  if (isLocalIP) {
-    // For local/development IPs, use sample data
-    const randomData = sampleData[Math.floor(Math.random() * sampleData.length)];
-    country = randomData.country;
-    
-    // Generate a realistic-looking IP based on country prefix
-    const suffix1 = Math.floor(Math.random() * 255);
-    const suffix2 = Math.floor(Math.random() * 255);
-    finalIp = `${randomData.ipPrefix}.${suffix1}.${suffix2}`;
-    
-    // Random chance for VPN (15% chance)
-    vpn = Math.random() < 0.15;
-  } else {
-    // For real IPs, use actual geolocation
-    const geo = geoip.lookup(cleanIp)
-    country = geo?.country || 'Unknown'
-    finalIp = cleanIp;
-
-    // VPN detection via IPWHOIS.IO security.vpn field
-    try {
-      const resp = await fetch(`https://ipwho.is/${cleanIp}?fields=security`)
-      const json = await resp.json()
-      vpn = !!json.security?.vpn
-    } catch (_) {
-      vpn = false
-    }
-  }
-
-  const now = new Date()
-  const timestamp = now.toISOString()
-  const date = timestamp.slice(0, 10)
-
-  const dataDir = path.join(process.cwd(), 'data')
-  const filePath = path.join(dataDir, 'visits.json')
-  await fs.mkdir(dataDir, { recursive: true })
-
-  let visits: any[] = []
   try {
-    const content = await fs.readFile(filePath, 'utf-8')
-    visits = JSON.parse(content)
-  } catch (_) {
-    visits = []
+    const { adBlock, offerId } = req.body || {}
+    // Get client IP, support x-forwarded-for
+    const forwarded = req.headers['x-forwarded-for']
+    const ip = Array.isArray(forwarded)
+      ? forwarded[0]
+      : forwarded || req.socket.remoteAddress || ''
+    const cleanIp = ip.split(',')[0].trim()
+
+    // Check if this is a local/development IP
+    const isLocalIP = cleanIp === '::1' || cleanIp === '127.0.0.1' || cleanIp.startsWith('192.168.') || cleanIp.startsWith('10.') || cleanIp.startsWith('172.') || cleanIp.startsWith('::ffff:');
+
+    // Bot detection via User-Agent
+    const ua = req.headers['user-agent'] || ''
+    const bot = /bot|crawl|spider|slurp|fetch|monitor|scan|ping|libwww|curl|wget|python-requests/i.test(ua)
+
+    // Parse User-Agent for browser, OS, and device
+    const parser = new UAParser(ua);
+    const browser = parser.getBrowser().name || 'Unknown';
+    const os = parser.getOS().name || 'Unknown';
+    const deviceType = parser.getDevice().type || 'desktop'; // 'desktop', 'mobile', 'tablet'
+
+    // Get referrer
+    const referrer = req.headers['referer'] || req.headers['x-referer'] || 'Direct';
+    const referrerString = Array.isArray(referrer) ? referrer[0] : referrer;
+    let trafficSource = 'Direct';
+    if (referrerString !== 'Direct') {
+      try {
+        const url = new URL(referrerString);
+        if (url.hostname.includes('google.') || url.hostname.includes('bing.') || url.hostname.includes('yahoo.')) {
+          trafficSource = 'Search Engine';
+        } else if (url.hostname.includes('facebook.') || url.hostname.includes('twitter.') || url.hostname.includes('linkedin.') || url.hostname.includes('instagram.')) {
+          trafficSource = 'Social Media';
+        } else if (url.hostname === req.headers.host) { // Internal referrer
+          trafficSource = 'Internal';
+        } else {
+          trafficSource = 'Referral';
+        }
+      } catch (e) {
+        trafficSource = 'Referral'; // Fallback for malformed URLs
+      }
+    }
+
+    let country, finalIp, vpn = false;
+
+    if (isLocalIP) {
+      // For local/development IPs, use sample data
+      const randomData = sampleData[Math.floor(Math.random() * sampleData.length)];
+      country = randomData.country;
+      
+      // Generate a realistic-looking IP based on country prefix
+      const suffix1 = Math.floor(Math.random() * 255);
+      const suffix2 = Math.floor(Math.random() * 255);
+      finalIp = `${randomData.ipPrefix}.${suffix1}.${suffix2}`;
+      
+      // Random chance for VPN (15% chance)
+      vpn = Math.random() < 0.15;
+    } else {
+      // For real IPs, use actual geolocation
+      const geo = geoip.lookup(cleanIp)
+      country = geo?.country || 'Unknown'
+      finalIp = cleanIp;
+
+      // VPN detection via IPWHOIS.IO security.vpn field
+      try {
+        const resp = await fetch(`https://ipwho.is/${cleanIp}?fields=security`)
+        const json = await resp.json()
+        vpn = !!json.security?.vpn
+      } catch (_) {
+        vpn = false
+      }
+    }
+
+    const now = new Date()
+    const timestamp = now.toISOString()
+    const date = timestamp.slice(0, 10)
+
+    // Generate unique ID for each visit
+    const visitId = `${finalIp}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`
+
+    // Connect to MongoDB
+    const client = await clientPromise;
+    const db = client.db('unlockvault');
+    const collection = db.collection('visits');
+
+    // Add new visit
+    const visitData = { 
+      id: visitId,
+      ip: finalIp, 
+      country, 
+      bot, 
+      adBlock: !!adBlock, 
+      vpn, 
+      timestamp, 
+      date, 
+      browser, 
+      os, 
+      deviceType, 
+      trafficSource,
+      offerId: offerId || null
+    };
+
+    await collection.insertOne(visitData);
+
+    // Keep only last 2000 records (optional cleanup)
+    const totalCount = await collection.countDocuments();
+    if (totalCount > 2000) {
+      const oldestVisits = await collection
+        .find({})
+        .sort({ timestamp: 1 })
+        .limit(totalCount - 2000)
+        .toArray();
+      
+      const idsToDelete = oldestVisits.map(visit => visit._id);
+      await collection.deleteMany({ _id: { $in: idsToDelete } });
+    }
+
+    return res.status(200).json({ ok: true })
+  } catch (error) {
+    console.error('Error tracking visit:', error);
+    return res.status(500).json({ error: 'Failed to track visit' });
   }
-
-  // Generate unique ID for each visit
-  const visitId = `${finalIp}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`
-
-  // Add new visit (no city field)
-  visits.push({ 
-    id: visitId,
-    ip: finalIp, 
-    country, 
-    bot, 
-    adBlock: !!adBlock, 
-    vpn, 
-    timestamp, 
-    date, 
-    browser, 
-    os, 
-    deviceType, 
-    trafficSource,
-    offerId: offerId || null
-  })
-
-  // Keep last 2000 records
-  if (visits.length > 2000) {
-    visits = visits.slice(-2000)
-  }
-
-  await fs.writeFile(filePath, JSON.stringify(visits, null, 2), 'utf-8')
-  return res.status(200).json({ ok: true })
 } 
