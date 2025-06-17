@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import clientPromise from '../../lib/mongodb'
-import geoip from 'geoip-lite'
 import UAParser from 'ua-parser-js'
 
 // Sample countries with realistic IP ranges
@@ -93,17 +92,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Random chance for VPN (15% chance)
       vpn = Math.random() < 0.15;
     } else {
-      // For real IPs, use actual geolocation
-      const geo = geoip.lookup(cleanIp)
-      country = geo?.country || 'Unknown'
+      // For real IPs, use actual geolocation via ipwho.is API
       finalIp = cleanIp;
-
-      // VPN detection via IPWHOIS.IO security.vpn field
+      
       try {
-        const resp = await fetch(`https://ipwho.is/${cleanIp}?fields=security`)
+        const resp = await fetch(`https://ipwho.is/${cleanIp}`)
         const json = await resp.json()
-        vpn = !!json.security?.vpn
+        
+        if (json.success) {
+          country = json.country || 'Unknown'
+          vpn = !!json.security?.vpn
+        } else {
+          country = 'Unknown'
+          vpn = false
+        }
       } catch (_) {
+        country = 'Unknown'
         vpn = false
       }
     }
