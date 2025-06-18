@@ -8,7 +8,7 @@
     "category": "Video & Audio",
     "type": "tool",
     "lockerLinks": {},
-    "views": 14,
+    "views": 43,
     "unlocks": 0,
     "keywords": [
       "canva",
@@ -21,7 +21,12 @@
     "featured": true,
     "rating": 5,
     "status": "active",
-    "gallery": "[\"https://i.postimg.cc/yN9wdVZS/20250618-1655-Cap-Cut-Pro-Poster-simple-compose-01jy1vz0f2f0tt53qjt4nwmte5.png\",\"https://i.postimg.cc/B64wn23d/20250618-1655-Cap-Cut-Pro-Features-simple-compose-01jy1vznq8fd4s1pc2vyq0m62h.png\",\"https://i.postimg.cc/3RFVXn98/20250618-1725-Cap-Cut-Free-vs-Pro-simple-compose-01jy1xnmnjeq9venx4zhkfecwk.png\",\"https://i.postimg.cc/tTj8nL3v/20250618-1657-Cap-Cut-Pro-Upgrade-simple-compose-01jy1w2nmgeqp84jedt9d7xf9f.png\"]",
+    "gallery": [
+      "https://i.postimg.cc/yN9wdVZS/20250618-1655-Cap-Cut-Pro-Poster-simple-compose-01jy1vz0f2f0tt53qjt4nwmte5.png",
+      "https://i.postimg.cc/B64wn23d/20250618-1655-Cap-Cut-Pro-Features-simple-compose-01jy1vznq8fd4s1pc2vyq0m62h.png",
+      "https://i.postimg.cc/3RFVXn98/20250618-1725-Cap-Cut-Free-vs-Pro-simple-compose-01jy1xnmnjeq9venx4zhkfecwk.png",
+      "https://i.postimg.cc/tTj8nL3v/20250618-1657-Cap-Cut-Pro-Upgrade-simple-compose-01jy1w2nmgeqp84jedt9d7xf9f.png"
+    ],
     "features": []
   }
 ]

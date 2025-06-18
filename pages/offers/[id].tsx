@@ -12,6 +12,7 @@ interface Offer {
   category: string;
   type: 'tool' | 'app' | 'game';
   lockerLinks: { [key: string]: string };
+  link?: string; // Main offer link
   views: number;
   unlocks: number;
   keywords: string[];
@@ -236,6 +237,7 @@ const OfferDetailPage = () => {
   };
 
   const getCpaLink = () => {
+    // First check for lockerLinks (country-specific)
     if (offer?.lockerLinks && Object.keys(offer.lockerLinks).length > 0) {
       const countryLink = offer.lockerLinks[countryCode.toUpperCase()];
       if (countryLink) return countryLink;
@@ -243,6 +245,12 @@ const OfferDetailPage = () => {
       const firstLink = Object.values(offer.lockerLinks)[0];
       return firstLink;
     }
+    
+    // Fallback to main link field
+    if (offer?.link && offer.link.trim() !== '') {
+      return offer.link;
+    }
+    
     return 'https://example.com/default-locker';
   };
 
