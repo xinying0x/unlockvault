@@ -81,6 +81,19 @@ interface QuickAction {
   badge?: string;
 }
 
+interface VisitStats {
+  totalVisits: number;
+  uniqueIPs: number;
+  todayVisits: number;
+  vpnUsers: number;
+  botTraffic: number;
+  adBlockUsers: number;
+  countries: { [key: string]: number };
+  browsers: { [key: string]: number };
+  devices: { [key: string]: number };
+  trafficSources: { [key: string]: number };
+}
+
 interface DashboardData {
   totalViews: number;
   totalUnlocks: number;
@@ -216,7 +229,7 @@ const AdminDashboard: React.FC = () => {
 
       if (statsRes.ok) {
         const statsData = await statsRes.json();
-        let visitData = {};
+        let visitData: Partial<VisitStats> = {};
         
         if (visitStatsRes.ok) {
           visitData = await visitStatsRes.json();
