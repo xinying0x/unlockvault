@@ -50,7 +50,7 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
     <div className={`group relative w-full ${compact ? 'max-w-xs' : 'max-w-sm'} mx-auto`}>
       {/* Card Container - Make entire card clickable */}
       <Link href={buttonHref} className="block w-full">
-        <div className={`relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] cursor-pointer ${compact ? 'h-80' : ''}`}>
+        <div className={`relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] cursor-pointer ${compact ? 'min-h-[400px] flex flex-col' : 'flex flex-col'}`}>
         
           {/* Featured Badge */}
           {featured && (
@@ -102,53 +102,56 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
           </div>
 
           {/* Content */}
-          <div className={`${compact ? 'p-3 space-y-2' : 'p-4 sm:p-6 space-y-4'}`}>
-            {/* Category */}
-            <div className="text-xs font-medium text-blue-400 uppercase tracking-wider">
-              {category}
-            </div>
+          <div className={`${compact ? 'p-3 flex-1 flex flex-col' : 'p-4 sm:p-6 flex-1 flex flex-col'}`}>
+            {/* Content Section */}
+            <div className={`${compact ? 'space-y-2 flex-1' : 'space-y-4 flex-1'}`}>
+              {/* Category */}
+              <div className="text-xs font-medium text-blue-400 uppercase tracking-wider">
+                {category}
+              </div>
 
-            {/* Title */}
-            <h3 className={`${compact ? 'text-sm' : 'text-lg sm:text-xl'} font-bold text-white line-clamp-2 group-hover:text-blue-400 transition-colors duration-300`}>
-              {title}
-            </h3>
+              {/* Title */}
+              <h3 className={`${compact ? 'text-sm' : 'text-lg sm:text-xl'} font-bold text-white line-clamp-2 group-hover:text-blue-400 transition-colors duration-300`}>
+                {title}
+              </h3>
 
-            {/* Description */}
-            <p className={`text-sm text-gray-300 ${compact ? 'line-clamp-2' : 'line-clamp-3'} leading-relaxed`}>
-              {description}
-            </p>
+              {/* Description */}
+              <p className={`text-sm text-gray-300 ${compact ? 'line-clamp-2' : 'line-clamp-3'} leading-relaxed`}>
+                {description}
+              </p>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <span
-                    key={i}
-                    className={`${compact ? 'text-xs' : 'text-sm'} ${
-                      i < rating ? 'text-yellow-400' : 'text-gray-600'
-                    }`}
-                  >
-                    ⭐
+              {/* Rating */}
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <span
+                      key={i}
+                      className={`${compact ? 'text-xs' : 'text-sm'} ${
+                        i < rating ? 'text-yellow-400' : 'text-gray-600'
+                      }`}
+                    >
+                      ⭐
+                    </span>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400">({rating}/5)</span>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    👁️ {views > 999 ? `${(views/1000).toFixed(1)}k` : views}
                   </span>
-                ))}
-              </div>
-              <span className="text-xs text-gray-400">({rating}/5)</span>
-            </div>
-
-            {/* Stats */}
-            <div className="flex items-center justify-between text-xs text-gray-400">
-              <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1">
-                  👁️ {views > 999 ? `${(views/1000).toFixed(1)}k` : views}
-                </span>
-                <span className="flex items-center gap-1">
-                  ⬇️ {unlocks > 999 ? `${(unlocks/1000).toFixed(1)}k` : unlocks}
-                </span>
+                  <span className="flex items-center gap-1">
+                    ⬇️ {unlocks > 999 ? `${(unlocks/1000).toFixed(1)}k` : unlocks}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Action Button - Now just visual, card click handles navigation */}
-            <div className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm' : 'py-3 px-6'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
+            {/* Action Button - Always at bottom */}
+            <div className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm mt-3' : 'py-3 px-6 mt-4'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
               <span className="flex items-center justify-center gap-2">
                 <span>{buttonText}</span>
                 <span className={compact ? 'text-sm' : 'text-lg'}>🚀</span>
