@@ -139,8 +139,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalPages: Math.ceil(totalFilteredCount / limitNum)
     };
     
-    // Cache results for 5 minutes
-    cache.set(cacheKey, responseData, 5);
+    // Cache results for 1 minute to ensure fresh data
+    cache.set(cacheKey, responseData, 1);
     
     const duration = Date.now() - startTime;
     

@@ -433,8 +433,8 @@ const OfferDetailPage = () => {
                     <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
-                <img
-                  src={offer.gallery[galleryIndex]}
+              <img
+                src={offer.gallery[galleryIndex]}
                   alt={`Gallery image ${galleryIndex + 1}`}
                   className="max-h-full max-w-full rounded-xl shadow-2xl border-2 border-purple-500/30 object-contain"
                   onLoad={() => setImageLoading(false)}

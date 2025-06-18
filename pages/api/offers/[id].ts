@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import clientPromise from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { autoSyncOffers } from '../../../lib/syncOffers';
 
 interface Offer {
   _id?: ObjectId;
@@ -111,6 +112,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ message: 'Offer not found' });
         }
 
+        // Auto-sync to JSON file for search
+        await autoSyncOffers();
+
         res.status(200).json({ message: 'Offer updated successfully' });
         break;
 
@@ -122,6 +126,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (deleteResult.deletedCount === 0) {
           return res.status(404).json({ message: 'Offer not found' });
         }
+
+        // Auto-sync to JSON file for search
+        await autoSyncOffers();
 
         res.status(200).json({ message: 'Offer deleted successfully' });
         break;

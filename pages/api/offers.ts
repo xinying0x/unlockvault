@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import clientPromise from '../../lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { autoSyncOffers } from '../../lib/syncOffers';
 
 interface Offer {
   _id?: ObjectId;
@@ -95,6 +96,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         const result = await collection.insertOne(newOffer);
+        
+        // Auto-sync to JSON file for search
+        await autoSyncOffers();
         
         res.status(201).json({ 
           message: 'Offer created successfully', 

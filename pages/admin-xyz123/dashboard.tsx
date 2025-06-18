@@ -17,6 +17,7 @@ import {
 } from 'chart.js';
 import AdminLayout from '../../components/AdminLayout';
 import ActivityFeed from '../../components/ActivityFeed';
+import SyncStatusComponent from '../../components/SyncStatus';
 
 ChartJS.register(
   CategoryScale,
@@ -473,6 +474,9 @@ const AdminDashboard: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Search Index Sync Status */}
+        <SyncStatusComponent />
 
         {/* Quick Actions Grid */}
         <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
