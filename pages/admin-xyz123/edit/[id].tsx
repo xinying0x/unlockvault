@@ -147,8 +147,8 @@ const EditOfferPage: React.FC = () => {
       return;
     }
 
-    if (Object.keys(offerData.lockerLinks).length === 0) {
-      setMessage('Please add at least one locker link');
+    if (!offerData.link || offerData.link.trim() === '') {
+      setMessage('Please add the main offer link');
       setMessageType('error');
       return;
     }

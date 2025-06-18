@@ -194,51 +194,51 @@ const VisitorsPage: React.FC = () => {
         </div>
 
         {/* Visitors Table */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="bg-[#2D1B5A]/50 backdrop-blur-sm shadow-2xl rounded-xl overflow-hidden border border-purple-900/30">
           <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
             <h2 className="text-xl font-bold">Visitor Details</h2>
             <p className="text-purple-100">Real-time visitor tracking with IP addresses and locations</p>
           </div>
           
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-purple-900/30">
+              <thead className="bg-gray-800/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FLAGS</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TIMESTAMP</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BROWSER</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DEVICE</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">COUNTRY</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP ADDRESS</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">FLAGS</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">TIMESTAMP</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">BROWSER</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">DEVICE</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">COUNTRY</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">IP ADDRESS</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-gray-900/30 divide-y divide-purple-900/20">
                 {currentVisits.map((visit) => (
-                  <tr key={visit.ip} className="hover:bg-gray-50">
+                  <tr key={visit.ip} className="hover:bg-gray-800/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex space-x-1">
-                        {visit.vpn && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">VPN</span>}
-                        {visit.bot && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">BOT</span>}
-                        {visit.adBlock && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">ADBLOCK</span>}
+                        {visit.vpn && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-600/20 text-yellow-300 border border-yellow-500/30">VPN</span>}
+                        {visit.bot && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-600/20 text-red-300 border border-red-500/30">BOT</span>}
+                        {visit.adBlock && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600/20 text-blue-300 border border-blue-500/30">ADBLOCK</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {formatTimestamp(visit.timestamp)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {visit.browser}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       <span className="capitalize">{visit.deviceType}</span>
                       <div className="text-xs text-gray-500">{visit.os}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       <div className="flex items-center">
                         {getCountryFlag(visit.country)}
                         <span className="ml-2">{visit.country}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-300">
                       {visit.ip}
                     </td>
                   </tr>

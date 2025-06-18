@@ -16,7 +16,12 @@ const SyncStatusComponent: React.FC = () => {
   const fetchSyncStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/sync-offers');
+      const response = await fetch('/api/admin/sync-offers', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setStatus(data.status);
@@ -33,7 +38,11 @@ const SyncStatusComponent: React.FC = () => {
     try {
       setSyncing(true);
       const response = await fetch('/api/admin/sync-offers', {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       if (response.ok) {
