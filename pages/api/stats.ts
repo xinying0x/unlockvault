@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const todayVisits = await visitsCollection.countDocuments({
       date: new Date().toISOString().slice(0, 10)
     })
+    const uniqueIPs = await visitsCollection.distinct('ip')
 
     // Get testimonials stats
     const testimonialsCollection = db.collection('testimonials')
@@ -49,7 +50,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalUnlocks: totalUnlocks[0]?.total || 0,
       totalVisits,
       todayVisits,
-      totalTestimonials
+      totalTestimonials,
+      uniqueVisitors: uniqueIPs.length
     }
 
     // Cache the results for 2 minutes

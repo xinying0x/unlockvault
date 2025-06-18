@@ -58,12 +58,29 @@ const VisitorsPage: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/visitors');
-      if (!response.ok) throw new Error('Failed to fetch visitors');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       const data = await response.json();
-      setVisits(data.visits);
-      setStats(data.stats);
+      
+      if (data.visits && data.stats) {
+        setVisits(data.visits);
+        setStats(data.stats);
+      } else {
+        throw new Error('Invalid data format received');
+      }
     } catch (error) {
       console.error('Error fetching visitors:', error);
+      // عرض بيانات تجريبية في حالة فشل الاتصال
+      setStats({
+        totalVisits: 0,
+        uniqueIPs: 0,
+        countries: {},
+        vpnUsers: 0,
+        botTraffic: 0,
+        adBlockUsers: 0
+      });
+      setVisits([]);
     } finally {
       setIsLoading(false);
     }

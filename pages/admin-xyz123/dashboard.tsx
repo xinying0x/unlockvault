@@ -206,19 +206,27 @@ const AdminDashboard: React.FC = () => {
     }
     
     try {
-      const [statsRes, activityRes] = await Promise.all([
+      const [statsRes, activityRes, visitStatsRes] = await Promise.all([
         fetch('/api/stats'),
-        fetch('/api/activity')
+        fetch('/api/activity'),
+        fetch('/api/visit-stats')
       ]);
 
       if (statsRes.ok) {
         const statsData = await statsRes.json();
+        let visitData = {};
+        
+        if (visitStatsRes.ok) {
+          visitData = await visitStatsRes.json();
+        }
+        
         setStats(prev => ({
           ...prev,
           ...statsData,
+          ...visitData,
           weeklyGrowth: Math.floor(Math.random() * 20) + 5, // Simulated data
           monthlyGrowth: Math.floor(Math.random() * 50) + 10,
-          activeUsers: Math.floor((statsData.totalUsers || 125000) * 0.15),
+          activeUsers: visitData.uniqueIPs || Math.floor((statsData.totalUsers || 125000) * 0.15),
           bounceRate: Math.floor(Math.random() * 30) + 20
         }));
       }
