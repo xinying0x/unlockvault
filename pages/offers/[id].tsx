@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 
@@ -34,6 +34,9 @@ const OfferDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
     if (id && typeof id === 'string') {
@@ -71,6 +74,93 @@ const OfferDetailPage = () => {
       setLoading(false);
     }
   };
+
+  // Enhanced gallery navigation functions
+  const nextImage = useCallback(() => {
+    if (!offer?.gallery || offer.gallery.length === 0) return;
+    setImageLoading(true);
+    setGalleryIndex((prevIndex) => (prevIndex + 1) % offer.gallery!.length);
+  }, [offer?.gallery]);
+
+  const prevImage = useCallback(() => {
+    if (!offer?.gallery || offer.gallery.length === 0) return;
+    setImageLoading(true);
+    setGalleryIndex((prevIndex) => (prevIndex - 1 + offer.gallery!.length) % offer.gallery!.length);
+  }, [offer?.gallery]);
+
+  const goToImage = useCallback((index: number) => {
+    if (!offer?.gallery || offer.gallery.length === 0) return;
+    setImageLoading(true);
+    setGalleryIndex(index);
+  }, [offer?.gallery]);
+
+  // Touch/Swipe handling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      nextImage();
+    } else if (isRightSwipe) {
+      prevImage();
+    }
+  };
+
+  // Keyboard navigation
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!galleryModalOpen) return;
+    
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        prevImage();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        nextImage();
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setGalleryModalOpen(false);
+        break;
+      case ' ':
+        e.preventDefault();
+        nextImage();
+        break;
+    }
+  }, [galleryModalOpen, prevImage, nextImage]);
+
+  // Mouse wheel navigation
+  const handleWheelNavigation = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY > 0) {
+      nextImage();
+    } else {
+      prevImage();
+    }
+  };
+
+  useEffect(() => {
+    if (galleryModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = 'auto';
+      };
+    }
+  }, [galleryModalOpen, handleKeyDown]);
 
   // Countdown timer
   useEffect(() => {
@@ -185,10 +275,16 @@ const OfferDetailPage = () => {
               <img
                 src={offer.image}
                 alt={offer.title}
-                className="w-full max-w-sm mx-auto rounded-xl shadow-lg border border-purple-900"
+                className="w-full max-w-sm mx-auto rounded-xl shadow-lg border border-purple-900 cursor-pointer transition-transform duration-300 hover:scale-105"
+                onClick={() => {
+                  if (offer.gallery && offer.gallery.length > 0) {
+                    setGalleryIndex(0);
+                    setGalleryModalOpen(true);
+                  }
+                }}
               />
               
-              {/* Gallery Section - Moved here to be closer to main image */}
+              {/* Gallery Section - Enhanced */}
               {offer.gallery && offer.gallery.length > 0 && (
                 <div className="relative w-full overflow-x-auto flex gap-3 pb-2 scrollbar-thin scrollbar-thumb-purple-700/50 scrollbar-track-transparent">
                   {offer.gallery.map((img, idx) => (
@@ -196,7 +292,7 @@ const OfferDetailPage = () => {
                       key={idx}
                       src={img}
                       alt={`Gallery image ${idx+1}`}
-                      className="h-20 w-auto rounded-lg shadow-md border border-purple-900/50 object-cover transition-transform duration-300 hover:scale-105 bg-gray-800 cursor-pointer flex-shrink-0"
+                      className="h-20 w-auto rounded-lg shadow-md border border-purple-900/50 object-cover transition-all duration-300 hover:scale-105 hover:border-purple-400 bg-gray-800 cursor-pointer flex-shrink-0"
                       onClick={() => { setGalleryIndex(idx); setGalleryModalOpen(true); }}
                     />
                   ))}
@@ -267,39 +363,81 @@ const OfferDetailPage = () => {
             </div>
           </div>
 
-          {/* Modal/Slider */}
-          {galleryModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          {/* Enhanced Modal/Gallery */}
+          {galleryModalOpen && offer.gallery && offer.gallery.length > 0 && (
+            <div 
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 gallery-modal"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onWheel={handleWheelNavigation}
+            >
+              {/* Close Button */}
               <button
-                className="absolute top-6 right-8 text-white text-3xl font-bold hover:text-purple-400 transition"
+                className="absolute top-4 right-4 z-10 w-12 h-12 bg-black/50 rounded-full text-white text-2xl font-bold gallery-nav-btn flex items-center justify-center"
                 onClick={() => setGalleryModalOpen(false)}
+                aria-label="إغلاق المعرض"
               >
                 ×
               </button>
+
+              {/* Previous Button */}
               <button
-                className="absolute left-8 top-1/2 -translate-y-1/2 text-white text-4xl font-bold hover:text-purple-400 transition px-2"
-                onClick={() => setGalleryIndex((galleryIndex - 1 + offer.gallery.length) % offer.gallery.length)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/50 rounded-full text-white text-2xl font-bold gallery-nav-btn flex items-center justify-center"
+                onClick={prevImage}
+                aria-label="الصورة السابقة"
               >
                 ‹
               </button>
+
+              {/* Image Container */}
+              <div className="relative flex items-center justify-center w-full h-full px-16 py-16 gallery-image-container">
+                {imageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full gallery-loading"></div>
+                  </div>
+                )}
               <img
                 src={offer.gallery[galleryIndex]}
-                alt={`Gallery image ${galleryIndex+1}`}
-                className="max-h-[80vh] max-w-[90vw] rounded-2xl shadow-2xl border-4 border-purple-700/50 object-contain animate-fade-in"
-              />
+                  alt={`Gallery image ${galleryIndex + 1}`}
+                  className="max-h-full max-w-full rounded-xl shadow-2xl border-2 border-purple-500/30 object-contain gallery-image gallery-image-transition"
+                  onLoad={() => setImageLoading(false)}
+                  onError={() => setImageLoading(false)}
+                />
+              </div>
+
+              {/* Next Button */}
               <button
-                className="absolute right-8 top-1/2 -translate-y-1/2 text-white text-4xl font-bold hover:text-purple-400 transition px-2"
-                onClick={() => setGalleryIndex((galleryIndex + 1) % offer.gallery.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/50 rounded-full text-white text-2xl font-bold gallery-nav-btn flex items-center justify-center"
+                onClick={nextImage}
+                aria-label="الصورة التالية"
               >
                 ›
               </button>
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
-                {offer.gallery.map((_, i) => (
+
+              {/* Image Counter */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm gallery-counter">
+                {galleryIndex + 1} / {offer.gallery.length}
+              </div>
+
+              {/* Thumbnail Navigation */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-lg overflow-x-auto px-4 py-2 bg-black/30 rounded-full backdrop-blur-sm">
+                {offer.gallery.map((img, i) => (
                   <button
                     key={i}
-                    className={`w-3 h-3 rounded-full ${i === galleryIndex ? 'bg-purple-500' : 'bg-gray-500/50'} border-2 border-white`}
-                    onClick={() => setGalleryIndex(i)}
-                  />
+                    className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 gallery-thumbnail ${
+                      i === galleryIndex 
+                        ? 'border-purple-400 active' 
+                        : 'border-gray-500/50 hover:border-purple-300'
+                    }`}
+                    onClick={() => goToImage(i)}
+                  >
+                    <img
+                      src={img}
+                      alt={`Thumbnail ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
                 ))}
               </div>
             </div>

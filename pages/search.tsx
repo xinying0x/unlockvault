@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -48,6 +48,26 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialOffers.length >= ITEMS_PER_PAGE);
   const [searchStats, setSearchStats] = useState({ total: totalCount, filtered: initialOffers.length });
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerRef = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loading, isLoadingMore]);
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -55,10 +75,14 @@ const SearchPage: React.FC<SearchPageProps> = ({
       if (!searchQuery.trim() && category === 'all' && type === 'all') {
         setOffers(initialOffers);
         setSearchStats({ total: totalCount, filtered: initialOffers.length });
+        setIsLoadingMore(false);
         return;
       }
 
-      setLoading(true);
+      if (page === 1) {
+        setLoading(true);
+      }
+      
       try {
         const params = new URLSearchParams({
           q: searchQuery,
@@ -69,9 +93,14 @@ const SearchPage: React.FC<SearchPageProps> = ({
           limit: ITEMS_PER_PAGE.toString()
         });
 
+        console.log('Search params:', params.toString()); // Debug log
+
         const response = await fetch(`/api/search-v2?${params}`);
+        console.log('Search response status:', response.status); // Debug log
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Search data:', data); // Debug log
           
           if (page === 1) {
             setOffers(data.offers || []);
@@ -84,11 +113,24 @@ const SearchPage: React.FC<SearchPageProps> = ({
             total: data.totalCount || totalCount, 
             filtered: data.filteredCount || data.offers?.length || 0 
           });
+        } else {
+          console.error('Search API error:', response.status, await response.text());
+          // Fallback to initial offers on error
+          if (page === 1) {
+            setOffers(initialOffers);
+            setSearchStats({ total: totalCount, filtered: initialOffers.length });
+          }
         }
       } catch (error) {
         console.error('Search error:', error);
+        // Fallback to initial offers on error
+        if (page === 1) {
+          setOffers(initialOffers);
+          setSearchStats({ total: totalCount, filtered: initialOffers.length });
+        }
       } finally {
         setLoading(false);
+        setIsLoadingMore(false);
       }
     }, 300),
     [initialOffers, totalCount]
@@ -122,11 +164,15 @@ const SearchPage: React.FC<SearchPageProps> = ({
   };
 
   // Load more results
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || !hasMore) return;
+    
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
+    setIsLoadingMore(true);
+    
     debouncedSearch(query, selectedCategory, selectedType, sortBy, nextPage);
-  };
+  }, [currentPage, hasMore, isLoadingMore, query, selectedCategory, selectedType, sortBy, debouncedSearch]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -277,7 +323,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
             </div>
 
             {/* Search Stats */}
-            <div className="text-center mb-8 animate-fade-in-up delay-800">
+            <div className="text-center mb-16 animate-fade-in-up delay-800">
               <p className="text-gray-400">
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -314,52 +360,54 @@ const SearchPage: React.FC<SearchPageProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="grid-responsive">
-                {offers.map((offer, index) => (
-                  <div
-                    key={offer.id}
-                    className="animate-fade-in-up"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <ResponsiveCard
-                      title={offer.title}
-                      description={offer.description}
-                      image={offer.image}
-                      category={offer.category}
-                      type={offer.type}
-                      rating={offer.rating}
-                      buttonText={offer.type === 'tool' ? 'Open Tool' : offer.type === 'app' ? 'Download App' : 'Download Game'}
-                      buttonHref={`/offers/${offer.slug}`}
-                      views={offer.views}
-                      unlocks={offer.unlocks}
-                      featured={offer.featured}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+              <>
+                <div className="search-grid">
+                  {offers.map((offer, index) => (
+                    <div
+                      key={offer.id}
+                      className="animate-fade-in-up w-full"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <ResponsiveCard
+                        title={offer.title}
+                        description={offer.description}
+                        image={offer.image}
+                        category={offer.category}
+                        type={offer.type}
+                        rating={offer.rating}
+                        buttonText={offer.type === 'tool' ? 'Open Tool' : offer.type === 'app' ? 'Download App' : 'Download Game'}
+                        buttonHref={`/offers/${offer.slug}`}
+                        views={offer.views}
+                        unlocks={offer.unlocks}
+                        featured={offer.featured}
+                        compact={true}
+                      />
+                    </div>
+                  ))}
+                </div>
 
-            {/* Load More Button */}
-            {hasMore && offers.length > 0 && (
-              <div className="text-center mt-12">
-                <button
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Loading...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <span>Load More</span>
-                      <span>⬇️</span>
-                    </span>
-                  )}
-                </button>
-              </div>
+                {/* Infinite Scroll Trigger */}
+                {hasMore && (
+                  <div ref={observerRef} className="flex justify-center items-center py-8">
+                    {isLoadingMore && (
+                      <div className="flex items-center gap-3 infinite-scroll-loader">
+                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-gray-400">Loading more results...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* End of results indicator */}
+                {!hasMore && offers.length > 0 && (
+                  <div className="text-center py-8">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full text-gray-400 text-sm end-of-results">
+                      <span>🎉</span>
+                      <span>You've seen all results!</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>

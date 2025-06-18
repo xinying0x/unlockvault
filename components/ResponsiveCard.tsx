@@ -14,6 +14,7 @@ interface ResponsiveCardProps {
   views: number;
   unlocks: number;
   featured?: boolean;
+  compact?: boolean;
 }
 
 const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
@@ -27,7 +28,8 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
   buttonHref,
   views,
   unlocks,
-  featured = false
+  featured = false,
+  compact = false
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -45,29 +47,29 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
   };
 
   return (
-    <div className="group relative w-full max-w-sm mx-auto">
+    <div className={`group relative w-full ${compact ? 'max-w-xs' : 'max-w-sm'} mx-auto`}>
       {/* Card Container */}
-      <div className="relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02]">
+      <div className={`relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] ${compact ? 'h-80' : ''}`}>
         
         {/* Featured Badge */}
         {featured && (
-          <div className="absolute top-3 left-3 z-20">
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+          <div className={`absolute ${compact ? 'top-2 left-2' : 'top-3 left-3'} z-20`}>
+            <div className={`bg-gradient-to-r from-yellow-400 to-orange-500 text-white ${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-xs'} rounded-full font-bold shadow-lg`}>
               ⭐ Featured
             </div>
           </div>
         )}
 
         {/* Type Badge */}
-        <div className="absolute top-3 right-3 z-20">
-          <div className={`bg-gradient-to-r ${typeColors[type]} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1`}>
+        <div className={`absolute ${compact ? 'top-2 right-2' : 'top-3 right-3'} z-20`}>
+          <div className={`bg-gradient-to-r ${typeColors[type]} text-white ${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-xs'} rounded-full font-bold shadow-lg flex items-center gap-1`}>
             <span>{typeIcons[type]}</span>
             <span className="capitalize">{type}</span>
           </div>
         </div>
 
         {/* Image Container */}
-        <div className="relative h-48 sm:h-56 overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800">
+        <div className={`relative ${compact ? 'h-32' : 'h-48 sm:h-56'} overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800`}>
           {!imageError ? (
             <>
               <Image
@@ -89,7 +91,7 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
               )}
             </>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-6xl">
+            <div className={`absolute inset-0 flex items-center justify-center ${compact ? 'text-4xl' : 'text-6xl'}`}>
               {typeIcons[type]}
             </div>
           )}
@@ -99,19 +101,19 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className={`${compact ? 'p-3 space-y-2' : 'p-4 sm:p-6 space-y-4'}`}>
           {/* Category */}
           <div className="text-xs font-medium text-blue-400 uppercase tracking-wider">
             {category}
           </div>
 
           {/* Title */}
-          <h3 className="text-lg sm:text-xl font-bold text-white line-clamp-2 group-hover:text-blue-400 transition-colors duration-300">
+          <h3 className={`${compact ? 'text-sm' : 'text-lg sm:text-xl'} font-bold text-white line-clamp-2 group-hover:text-blue-400 transition-colors duration-300`}>
             {title}
           </h3>
 
           {/* Description */}
-          <p className="text-sm text-gray-300 line-clamp-3 leading-relaxed">
+          <p className={`text-sm text-gray-300 ${compact ? 'line-clamp-2' : 'line-clamp-3'} leading-relaxed`}>
             {description}
           </p>
 
@@ -121,7 +123,7 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
               {[...Array(5)].map((_, i) => (
                 <span
                   key={i}
-                  className={`text-sm ${
+                  className={`${compact ? 'text-xs' : 'text-sm'} ${
                     i < rating ? 'text-yellow-400' : 'text-gray-600'
                   }`}
                 >
@@ -136,10 +138,10 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
           <div className="flex items-center justify-between text-xs text-gray-400">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                👁️ {views.toLocaleString()}
+                👁️ {views > 999 ? `${(views/1000).toFixed(1)}k` : views}
               </span>
               <span className="flex items-center gap-1">
-                ⬇️ {unlocks.toLocaleString()}
+                ⬇️ {unlocks > 999 ? `${(unlocks/1000).toFixed(1)}k` : unlocks}
               </span>
             </div>
           </div>
@@ -149,10 +151,10 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
             href={buttonHref}
             className="block w-full"
           >
-            <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+            <button className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm' : 'py-3 px-6'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
               <span className="flex items-center justify-center gap-2">
                 <span>{buttonText}</span>
-                <span className="text-lg">🚀</span>
+                <span className={compact ? 'text-sm' : 'text-lg'}>🚀</span>
               </span>
             </button>
           </Link>

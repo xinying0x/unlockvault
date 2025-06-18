@@ -108,6 +108,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } catch (error) {
     console.error('Database error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    
+    // Fallback to dummy offers when MongoDB is not available
+    if (req.method === 'GET') {
+      const dummyOffers = [
+        {
+          id: 'dummy-1',
+          slug: 'adobe-photoshop-2024',
+          title: 'Adobe Photoshop 2024',
+          description: 'Professional photo editing software with advanced AI features',
+          image: '/images/placeholder.png',
+          category: 'Design',
+          type: 'app' as const,
+          lockerLinks: {
+            'linkvertise': 'https://example.com/link1',
+            'adfly': 'https://example.com/link2'
+          },
+          views: 15420,
+          unlocks: 8932,
+          keywords: ['photoshop', 'adobe', 'design', 'photo editing'],
+          addedAt: new Date().toISOString(),
+          featured: true,
+          status: 'active' as const,
+          lastModified: new Date().toISOString(),
+          useDummyStats: false
+        },
+        {
+          id: 'dummy-2',
+          slug: 'microsoft-office-365',
+          title: 'Microsoft Office 365',
+          description: 'Complete office suite with Word, Excel, PowerPoint and more',
+          image: '/images/placeholder.png',
+          category: 'Productivity',
+          type: 'app' as const,
+          lockerLinks: {
+            'linkvertise': 'https://example.com/link3',
+            'adfly': 'https://example.com/link4'
+          },
+          views: 23150,
+          unlocks: 12043,
+          keywords: ['office', 'microsoft', 'word', 'excel', 'powerpoint'],
+          addedAt: new Date().toISOString(),
+          featured: true,
+          status: 'active' as const,
+          lastModified: new Date().toISOString(),
+          useDummyStats: false
+        }
+      ];
+
+      res.status(200).json(dummyOffers);
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 } 

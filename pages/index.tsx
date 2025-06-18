@@ -299,20 +299,76 @@ const HomePage: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up delay-600">
-              <Link href="/search" className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 animate-fade-in-up delay-700">
-                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
-                  Start Exploring
-                </span>
+              <Link 
+                href="/search" 
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 overflow-hidden text-lg font-bold text-white rounded-2xl bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl animate-fade-in-up delay-700"
+              >
+                <span className="relative z-10">🚀 Start Exploring</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-400 rounded-full animate-ping"></div>
               </Link>
               <button
                 onClick={handleScrollToTools}
-                className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800 animate-fade-in-up delay-800"
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 overflow-hidden text-lg font-bold text-white rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl animate-fade-in-up delay-800"
               >
-                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
-                  How It Works
-                </span>
+                <span className="relative z-10">💡 How It Works</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-pink-400 to-orange-300 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* Featured Offers Section */}
+        <section ref={toolsRef} className="py-20 px-4 relative z-10">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-4xl font-extrabold text-center mb-12 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+              🌟 Featured Premium Tools
+            </h2>
+            {loading ? (
+              <div className="text-center py-10">
+                <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-lg text-gray-400">Loading awesome tools...</p>
+              </div>
+            ) : featuredOffers.length === 0 ? (
+              <p className="text-center text-gray-400 text-lg">No featured offers found at the moment. Check back soon!</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {featuredOffers.map((offer, index) => (
+                  <div
+                    key={offer.id}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <UnlockCard
+                      title={offer.title}
+                      description={offer.description}
+                      image={offer.image}
+                      category={offer.category}
+                      type={offer.type}
+                      rating={offer.rating}
+                      buttonText={offer.type === 'tool' ? 'Unlock Tool' : offer.type === 'app' ? 'Download App' : 'Download Game'}
+                      buttonHref={`/offers/${offer.slug}`}
+                      offerSlug={offer.slug}
+                      views={offer.views}
+                      unlocks={offer.unlocks}
+                      featured={true}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {featuredOffers.length > 0 && (
+              <div className="text-center mt-12">
+                <Link 
+                  href="/search"
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl group"
+                >
+                  <span>View All Tools</span>
+                  <span className="group-hover:translate-x-1 transition-transform">🚀</span>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
@@ -335,42 +391,6 @@ const HomePage: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* Featured Offers Section */}
-        <section ref={toolsRef} className="py-20 px-4 relative z-10">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-4xl font-extrabold text-center mb-12 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              Featured Unlocked Tools
-            </h2>
-            {loading ? (
-              <div className="text-center py-10">
-                <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-lg text-gray-400">Loading awesome tools...</p>
-              </div>
-            ) : featuredOffers.length === 0 ? (
-              <p className="text-center text-gray-400 text-lg">No featured offers found at the moment. Check back soon!</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-start">
-                {featuredOffers.map((offer) => (
-                  <UnlockCard
-                    key={offer.id}
-                    title={offer.title}
-                    description={offer.description}
-                    image={offer.image}
-                    category={offer.category}
-                    type={offer.type}
-                    rating={offer.rating}
-                    buttonText={offer.type === 'tool' ? 'Unlock Tool' : 'Download Game'}
-                    buttonHref={`/offers/${offer.slug}`}
-                    offerSlug={offer.slug}
-                    views={offer.views}
-                    unlocks={offer.unlocks}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </section>
 

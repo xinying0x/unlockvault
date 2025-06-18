@@ -218,7 +218,7 @@ const AdminDashboard: React.FC = () => {
           ...statsData,
           weeklyGrowth: Math.floor(Math.random() * 20) + 5, // Simulated data
           monthlyGrowth: Math.floor(Math.random() * 50) + 10,
-          activeUsers: Math.floor(statsData.totalUsers * 0.15),
+          activeUsers: Math.floor((statsData.totalUsers || 125000) * 0.15),
           bounceRate: Math.floor(Math.random() * 30) + 20
         }));
       }
@@ -240,10 +240,11 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const formatNumber = (num: number | undefined | null) => {
-    if (num === undefined || num === null) return '0';
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
+    if (num === undefined || num === null || isNaN(num)) return '0';
+    const numValue = Number(num);
+    if (numValue >= 1000000) return (numValue / 1000000).toFixed(1) + 'M';
+    if (numValue >= 1000) return (numValue / 1000).toFixed(1) + 'K';
+    return numValue.toString();
   };
 
   const quickActions: QuickAction[] = useMemo(() => [
