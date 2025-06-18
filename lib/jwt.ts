@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { logger } from './logger';
 
 // استخدام نفس المفتاح المستخدم في lib/auth.ts
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
@@ -9,26 +10,28 @@ console.log('Loaded JWT_SECRET:', JWT_SECRET ? '********' : 'UNDEFINED');
 export interface JwtPayload {
   email: string;
   role: string;
+  iat?: number;
+  exp?: number;
 }
 
-export function signJwt(payload: JwtPayload) {
+export function signJwt(payload: { email: string; role: string }): string {
   if (!JWT_SECRET) {
+    logger.error('JWT_SECRET is not defined');
     throw new Error('JWT_SECRET is not defined');
   }
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 }
 
 export function verifyJwt(token: string): JwtPayload | null {
   if (!JWT_SECRET) {
-    console.error('JWT_SECRET is not defined');
+    logger.error('JWT_SECRET is not defined');
     return null;
   }
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    console.log('Decoded JWT payload:', payload);
     return payload as JwtPayload;
   } catch (e) {
-    console.error('JWT verify error:', e);
+    logger.warn('JWT verification failed', { error: e });
     return null;
   }
 } 

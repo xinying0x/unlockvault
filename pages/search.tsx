@@ -93,14 +93,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
           limit: ITEMS_PER_PAGE.toString()
         });
 
-        console.log('Search params:', params.toString()); // Debug log
-
         const response = await fetch(`/api/search-v2?${params}`);
-        console.log('Search response status:', response.status); // Debug log
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Search data:', data); // Debug log
           
           if (page === 1) {
             setOffers(data.offers || []);
@@ -114,7 +110,6 @@ const SearchPage: React.FC<SearchPageProps> = ({
             filtered: data.filteredCount || data.offers?.length || 0 
           });
         } else {
-          console.error('Search API error:', response.status, await response.text());
           // Fallback to initial offers on error
           if (page === 1) {
             setOffers(initialOffers);

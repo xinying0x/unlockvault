@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import clientPromise from './mongodb';
+import { logger } from './logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -35,7 +36,7 @@ export async function validateCredentials(email: string, password: string): Prom
     const user = await usersCollection.findOne({ email, role: 'admin' });
     
     if (!user) {
-      console.log('User not found:', email);
+      logger.warn('Login attempt with non-existent user', { email });
       return false;
     }
     
@@ -48,12 +49,14 @@ export async function validateCredentials(email: string, password: string): Prom
         { email },
         { $set: { lastLogin: new Date().toISOString() } }
       );
+      logger.info('Successful login', { email });
+    } else {
+      logger.warn('Invalid password attempt', { email });
     }
     
-    console.log('Password validation result:', { isValid, email });
     return isValid;
   } catch (error) {
-    console.error('Error validating credentials:', error);
+    logger.error('Error validating credentials', error, { email });
     return false;
   }
 }
@@ -154,5 +157,5 @@ export function checkRateLimit(ip: string): boolean {
 }
 
 export function logFailedAttempt(ip: string, email: string): void {
-  console.warn(`Failed login attempt from IP: ${ip}, Email: ${email}, Time: ${new Date().toISOString()}`);
+  logger.warn('Failed login attempt', { ip, email, timestamp: new Date().toISOString() });
 } 

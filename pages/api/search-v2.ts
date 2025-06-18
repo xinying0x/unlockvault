@@ -1,215 +1,156 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import clientPromise from '../../lib/mongodb';
-import { cache } from '../../lib/cache';
 import { logger } from '../../lib/logger';
-import { checkRateLimit, getClientIP } from '../../lib/security';
-
-interface SearchResult {
-  id: string;
-  title: string;
-  type: 'tool' | 'app' | 'game';
-  category: string;
-  slug: string;
-  image: string;
-  relevance: number;
-  description: string;
-  views: number;
-  unlocks: number;
-  addedAt?: string;
-  rating?: number;
-}
+import { cache } from '../../lib/cache';
+import { searchRateLimit } from '../../lib/rateLimit';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Apply rate limiting
+  const rateLimitResult = searchRateLimit(req);
+  
+  // Set rate limit headers
+  res.setHeader('X-RateLimit-Limit', rateLimitResult.limit);
+  res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
+  res.setHeader('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+
+  if (!rateLimitResult.success) {
+    return res.status(429).json({ 
+      error: 'Too many requests',
+      message: 'Rate limit exceeded. Please try again later.',
+      retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
+    });
   }
 
   const startTime = Date.now();
-  const clientIP = getClientIP(req);
-
-  // Rate limiting
-  if (!checkRateLimit(clientIP, 50, 60 * 1000)) { // 50 requests per minute
-    return res.status(429).json({ message: 'Too many requests' });
-  }
+  const clientIP = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
 
   try {
-    const { 
-      q: query, 
-      limit = '12', 
-      page = '1',
-      type, 
-      category,
-      sort = 'relevance',
-      featured
-    } = req.query;
-
-    const limitNum = parseInt(limit as string);
-    const pageNum = parseInt(page as string);
+    const { q: query = '', category = '', type = '', sort = 'relevance', page = '1', limit = '20' } = req.query;
+    
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit as string) || 20)); // Max 50 items per page
     const skip = (pageNum - 1) * limitNum;
 
     // Create cache key
-    const cacheKey = `search:${query || 'all'}:${type || 'all'}:${category || 'all'}:${sort}:${page}:${limit}`;
+    const cacheKey = `search:${query}:${category}:${type}:${sort}:${pageNum}:${limitNum}`;
     
     // Check cache first
-    const cachedResults = cache.get(cacheKey);
-    if (cachedResults) {
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult) {
       logger.debug('Search cache hit', { query, type, category });
-      return res.json(cachedResults);
+      return res.json(cachedResult);
     }
 
     const client = await clientPromise;
     const db = client.db('unlockvault');
     const collection = db.collection('offers');
 
-    let mongoQuery: any = { status: 'active' };
-    let results: SearchResult[] = [];
+    // Build search pipeline
+    let pipeline: any[] = [];
 
-    // Build MongoDB query
-    if (type && type !== 'all') {
-      mongoQuery.type = type;
+    // Match stage
+    let matchStage: any = {};
+
+    if (query) {
+      matchStage.$or = [
+        { title: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { keywords: { $regex: query, $options: 'i' } },
+        { category: { $regex: query, $options: 'i' } }
+      ];
     }
 
     if (category && category !== 'all') {
-      mongoQuery.category = category;
+      matchStage.category = { $regex: category, $options: 'i' };
     }
 
-    if (featured === 'true') {
-      mongoQuery.featured = true;
+    if (type && type !== 'all') {
+      matchStage.type = type;
     }
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    // Add fields for sorting
+    pipeline.push({
+      $addFields: {
+        relevanceScore: query ? {
+          $add: [
+            { $cond: [{ $regexMatch: { input: "$title", regex: query, options: "i" } }, 10, 0] },
+            { $cond: [{ $regexMatch: { input: "$description", regex: query, options: "i" } }, 5, 0] },
+            { $cond: [{ $regexMatch: { input: "$keywords", regex: query, options: "i" } }, 3, 0] }
+          ]
+        } : 0,
+        popularityScore: { $add: [{ $multiply: ["$views", 0.3] }, { $multiply: ["$unlocks", 0.7] }] }
+      }
+    });
+
+    // Sort stage
+    let sortStage: any = {};
+    switch (sort) {
+      case 'newest':
+        sortStage = { addedAt: -1 };
+        break;
+      case 'popular':
+        sortStage = { popularityScore: -1 };
+        break;
+      case 'views':
+        sortStage = { views: -1 };
+        break;
+      case 'unlocks':
+        sortStage = { unlocks: -1 };
+        break;
+      case 'relevance':
+      default:
+        if (query) {
+          sortStage = { relevanceScore: -1, popularityScore: -1 };
+        } else {
+          sortStage = { featured: -1, popularityScore: -1 };
+        }
+        break;
+    }
+
+    pipeline.push({ $sort: sortStage });
 
     // Get total count for pagination
-    const totalCount = await collection.countDocuments(mongoQuery);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const totalResult = await collection.aggregate(countPipeline).toArray();
+    const totalCount = totalResult[0]?.total || 0;
+    const filteredCount = totalCount;
 
-    if (query && typeof query === 'string' && query.trim().length >= 1) {
-      const searchQuery = query.trim();
-      
-      // Use MongoDB text search if available, otherwise use regex
-      mongoQuery.$or = [
-        { title: { $regex: searchQuery, $options: 'i' } },
-        { description: { $regex: searchQuery, $options: 'i' } },
-        { keywords: { $in: [new RegExp(searchQuery, 'i')] } },
-        { category: { $regex: searchQuery, $options: 'i' } }
-      ];
+    // Add pagination
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: limitNum });
 
-      // Get all matching documents for relevance calculation
-      const items = await collection
-        .find(mongoQuery)
-        .toArray();
-
-      // Calculate relevance scores
-      items.forEach(item => {
-        let relevance = 0;
-        const searchLower = searchQuery.toLowerCase();
-        const titleLower = item.title.toLowerCase();
-        const descLower = item.description.toLowerCase();
-
-        // Title match (highest priority)
-        if (titleLower.includes(searchLower)) {
-          relevance += 10;
-          if (titleLower.startsWith(searchLower)) {
-            relevance += 5; // Boost for prefix match
-          }
-        }
-
-        // Description match
-        if (descLower.includes(searchLower)) {
-          relevance += 3;
-        }
-
-        // Keywords match
-        if (item.keywords && Array.isArray(item.keywords)) {
-          item.keywords.forEach((keyword: string) => {
-            if (keyword.toLowerCase().includes(searchLower)) {
-              relevance += 2;
-            }
-          });
-        }
-
-        // Category match
-        if (item.category.toLowerCase().includes(searchLower)) {
-          relevance += 4;
-        }
-
-        // Boost based on popularity
-        relevance += Math.log(item.views + 1) * 0.1;
-        relevance += Math.log(item.unlocks + 1) * 0.2;
-
-        if (relevance > 0) {
-          const { _id, ...cleanItem } = item;
-          results.push({
-            id: cleanItem.id,
-            title: cleanItem.title,
-            type: cleanItem.type,
-            category: cleanItem.category,
-            slug: cleanItem.slug,
-            image: cleanItem.image,
-            description: cleanItem.description,
-            views: cleanItem.views || 0,
-            unlocks: cleanItem.unlocks || 0,
-            addedAt: cleanItem.addedAt,
-            rating: cleanItem.rating,
-            relevance
-          });
-        }
-      });
-
-      // Sort by relevance or other criteria
-      if (sort === 'newest') {
-        results.sort((a, b) => new Date(b.addedAt || 0).getTime() - new Date(a.addedAt || 0).getTime());
-      } else if (sort === 'popular') {
-        results.sort((a, b) => (b.views || 0) - (a.views || 0));
-      } else if (sort === 'rating') {
-        results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      } else {
-        results.sort((a, b) => b.relevance - a.relevance);
+    // Project final fields
+    pipeline.push({
+      $project: {
+        id: { $toString: "$_id" },
+        slug: 1,
+        title: 1,
+        description: 1,
+        image: 1,
+        category: 1,
+        type: 1,
+        views: 1,
+        unlocks: 1,
+        addedAt: 1,
+        featured: 1,
+        _id: 0
       }
-    } else {
-      // No search query, return all items
-      let sortQuery: any = {};
-      
-      if (sort === 'newest') {
-        sortQuery = { addedAt: -1 };
-      } else if (sort === 'popular') {
-        sortQuery = { views: -1, unlocks: -1 };
-      } else if (sort === 'rating') {
-        sortQuery = { rating: -1 };
-      } else {
-        sortQuery = { views: -1, unlocks: -1 };
-      }
+    });
 
-      const items = await collection
-        .find(mongoQuery)
-        .sort(sortQuery)
-        .skip(skip)
-        .limit(limitNum)
-        .toArray();
-
-      results = items.map(item => {
-        const { _id, ...cleanItem } = item;
-        return {
-          id: cleanItem.id,
-          title: cleanItem.title,
-          type: cleanItem.type,
-          category: cleanItem.category,
-          slug: cleanItem.slug,
-          image: cleanItem.image,
-          description: cleanItem.description,
-          views: cleanItem.views || 0,
-          unlocks: cleanItem.unlocks || 0,
-          addedAt: cleanItem.addedAt,
-          rating: cleanItem.rating,
-          relevance: 1
-        };
-      });
-    }
-
-    // Apply pagination to search results
-    const paginatedResults = query ? results.slice(skip, skip + limitNum) : results;
-    const filteredCount = query ? results.length : totalCount;
+    // Execute search
+    const results = await collection.aggregate(pipeline).toArray();
     const hasMore = skip + limitNum < filteredCount;
 
     const responseData = {
-      offers: paginatedResults.map(result => ({
+      offers: results.map(result => ({
         id: result.id,
         slug: result.slug,
         title: result.title,
@@ -242,7 +183,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         query, 
         type, 
         category, 
-        resultCount: paginatedResults.length,
+        resultCount: results.length,
         ip: clientIP
       });
     }
@@ -306,15 +247,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     ];
 
-    const responseData = {
-      offers: dummyOffers,
-      totalCount: dummyOffers.length,
-      filteredCount: dummyOffers.length,
+    // Apply basic filtering to dummy data
+    let filteredDummy = dummyOffers;
+    const queryStr = (req.query.q as string || '').toLowerCase();
+    const categoryStr = (req.query.category as string || '');
+    const typeStr = (req.query.type as string || '');
+
+    if (queryStr) {
+      filteredDummy = filteredDummy.filter(offer => 
+        offer.title.toLowerCase().includes(queryStr) ||
+        offer.description.toLowerCase().includes(queryStr) ||
+        offer.category.toLowerCase().includes(queryStr)
+      );
+    }
+
+    if (categoryStr && categoryStr !== 'all') {
+      filteredDummy = filteredDummy.filter(offer => 
+        offer.category.toLowerCase().includes(categoryStr.toLowerCase())
+      );
+    }
+
+    if (typeStr && typeStr !== 'all') {
+      filteredDummy = filteredDummy.filter(offer => offer.type === typeStr);
+    }
+
+    res.status(200).json({
+      offers: filteredDummy,
+      totalCount: filteredDummy.length,
+      filteredCount: filteredDummy.length,
       hasMore: false,
       currentPage: 1,
-      totalPages: 1
-    };
-
-    res.status(200).json(responseData);
+      totalPages: 1,
+      fallback: true
+    });
   }
 } 

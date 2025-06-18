@@ -1,22 +1,75 @@
 {
-  "name": "UnlockVault",
+  "name": "UnlockVault - Premium Tools & Apps",
   "short_name": "UnlockVault",
-  "description": "Premium tools, apps, and games marketplace",
+  "description": "Access premium tools, apps, and games for free with UnlockVault",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
-  "orientation": "portrait-primary",
+  "background_color": "#18122B",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "entertainment"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Search Tools",
+      "short_name": "Search",
+      "description": "Search for premium tools and apps",
+      "url": "/search",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Browse Apps",
+      "short_name": "Apps",
+      "description": "Browse premium applications",
+      "url": "/apps",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Browse Games",
+      "short_name": "Games",
+      "description": "Browse premium games",
+      "url": "/games",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ]
 } 

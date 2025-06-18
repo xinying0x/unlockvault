@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { validateCredentials, checkRateLimit, logFailedAttempt, createDefaultAdmin } from '../../../lib/auth';
 import { signJwt } from '../../../lib/jwt';
+import { logger } from '../../../lib/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -17,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Rate limiting
   if (!checkRateLimit(clientIP as string)) {
+    logger.warn('Rate limit exceeded for login', { ip: clientIP, email });
     return res.status(429).json({ 
       error: 'Too many login attempts. Please try again in 15 minutes.',
       retryAfter: 15 * 60 // 15 minutes in seconds
@@ -24,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log('Login attempt:', { email, clientIP });
+    logger.info('Login attempt initiated', { email, ip: clientIP });
     
     // Ensure default admin exists
     await createDefaultAdmin();
@@ -52,14 +54,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `auth-token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
     ]);
 
-    console.log('Login successful:', { email, clientIP });
+    logger.info('Login successful', { email, ip: clientIP });
 
     res.status(200).json({ 
       success: true, 
       user: { email: user.email, role: user.role } 
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error', error, { email, ip: clientIP });
     res.status(500).json({ 
       error: 'Internal server error',
       message: 'An unexpected error occurred. Please try again later.'
