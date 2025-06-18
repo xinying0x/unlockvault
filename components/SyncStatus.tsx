@@ -16,16 +16,21 @@ const SyncStatusComponent: React.FC = () => {
   const fetchSyncStatus = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching sync status with credentials...');
       const response = await fetch('/api/admin/sync-offers', {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      console.log('📡 Response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Sync status data:', data);
         setStatus(data.status);
         setLastSyncTime(data.timestamp);
+      } else {
+        console.error('❌ Failed response:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch sync status:', error);
@@ -37,6 +42,7 @@ const SyncStatusComponent: React.FC = () => {
   const triggerSync = async () => {
     try {
       setSyncing(true);
+      console.log('🔄 Triggering manual sync with credentials...');
       const response = await fetch('/api/admin/sync-offers', {
         method: 'POST',
         credentials: 'include',
@@ -45,8 +51,10 @@ const SyncStatusComponent: React.FC = () => {
         },
       });
       
+      console.log('📡 Sync response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Sync successful:', data);
         setStatus(data.status);
         setLastSyncTime(data.timestamp);
         
@@ -54,6 +62,7 @@ const SyncStatusComponent: React.FC = () => {
         alert('✅ Offers synchronized successfully!');
       } else {
         const errorData = await response.json();
+        console.error('❌ Sync failed:', response.status, errorData);
         alert(`❌ Sync failed: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
