@@ -348,10 +348,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
         <section className="pb-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {offers.length === 0 && !loading ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-2xl font-bold text-white mb-4">No results found</h3>
-                <p className="text-gray-400 mb-8">Try searching with different keywords or change your filters</p>
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">🔍</div>
+                <h3 className="text-xl font-bold text-white mb-3">No results found</h3>
+                <p className="text-gray-400 mb-6">Try searching with different keywords or change your filters</p>
                 <button
                   onClick={clearFilters}
                   className="btn-primary"

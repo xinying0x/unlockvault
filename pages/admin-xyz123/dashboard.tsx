@@ -68,6 +68,7 @@ interface DashboardStats {
   monthlyGrowth: number;
   activeUsers: number;
   bounceRate: number;
+  uniqueIPs: number;
 }
 
 interface QuickAction {
@@ -163,7 +164,8 @@ const AdminDashboard: React.FC = () => {
     weeklyGrowth: 0,
     monthlyGrowth: 0,
     activeUsers: 0,
-    bounceRate: 0
+    bounceRate: 0,
+    uniqueIPs: 0
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
@@ -295,16 +297,8 @@ const AdminDashboard: React.FC = () => {
       icon: '⚙️',
       href: '/admin-xyz123/settings',
       color: 'from-yellow-500 to-orange-600'
-    },
-    {
-      title: 'User Management',
-      description: 'Manage user accounts and permissions',
-      icon: '👥',
-      href: '/admin-xyz123/users',
-      color: 'from-indigo-500 to-blue-600',
-      badge: `${formatNumber(stats.totalUsers)} Users`
     }
-  ], [stats.totalOffers, stats.totalUsers]);
+  ], [stats.totalOffers]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -460,9 +454,9 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Total Users</h3>
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">Unique Visitors</h3>
             <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalUsers)}
+              {formatNumber(stats.uniqueIPs || stats.activeUsers)}
             </p>
           </div>
         </div>

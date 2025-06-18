@@ -3,7 +3,7 @@ import Link from 'next/link';
 import CategoriesSection from '../components/CategoriesSection';
 import SEOHead from '../components/SEOHead';
 import UnlockCard from '../components/UnlockCard';
-import FloatingActionButton from '../components/FloatingActionButton';
+
 import BackToTop from '../components/BackToTop';
 import Image from 'next/image';
 
@@ -143,7 +143,7 @@ const HomePage: React.FC = () => {
           const statsData = await statsResponse.json();
           setStats({
             totalViews: statsData.totalViews,
-            uniqueVisitors: statsData.uniqueVisitors,
+            uniqueVisitors: statsData.totalVisitors || statsData.uniqueIPs || statsData.uniqueVisitors,
             totalUnlocks: statsData.totalUnlocks,
           });
         }
@@ -168,7 +168,7 @@ const HomePage: React.FC = () => {
       const data = await response.json();
       setStats({
         totalViews: data.totalViews,
-        uniqueVisitors: data.uniqueVisitors,
+        uniqueVisitors: data.totalVisitors || data.uniqueIPs || data.uniqueVisitors,
         totalUnlocks: data.totalUnlocks,
       });
     } catch (error) {
@@ -455,7 +455,6 @@ const HomePage: React.FC = () => {
         )}
       </main>
 
-      <FloatingActionButton />
       <BackToTop />
 
       {/* Footer Section */}
