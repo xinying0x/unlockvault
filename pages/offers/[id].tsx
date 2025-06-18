@@ -78,19 +78,19 @@ const OfferDetailPage = () => {
 
   // Enhanced gallery navigation functions
   const nextImage = useCallback(() => {
-    if (!offer?.gallery || offer.gallery.length === 0) return;
+    if (!offer?.gallery || !Array.isArray(offer.gallery) || offer.gallery.length === 0) return;
     setImageLoading(true);
     setGalleryIndex((prevIndex) => (prevIndex + 1) % offer.gallery!.length);
   }, [offer?.gallery]);
 
   const prevImage = useCallback(() => {
-    if (!offer?.gallery || offer.gallery.length === 0) return;
+    if (!offer?.gallery || !Array.isArray(offer.gallery) || offer.gallery.length === 0) return;
     setImageLoading(true);
     setGalleryIndex((prevIndex) => (prevIndex - 1 + offer.gallery!.length) % offer.gallery!.length);
   }, [offer?.gallery]);
 
   const goToImage = useCallback((index: number) => {
-    if (!offer?.gallery || offer.gallery.length === 0) return;
+    if (!offer?.gallery || !Array.isArray(offer.gallery) || offer.gallery.length === 0) return;
     setImageLoading(true);
     setGalleryIndex(index);
   }, [offer?.gallery]);
@@ -306,7 +306,7 @@ const OfferDetailPage = () => {
                 alt={offer.title}
                 className="w-full max-w-sm mx-auto rounded-xl shadow-lg border border-purple-900 cursor-pointer transition-transform duration-300 hover:scale-105"
                 onClick={() => {
-                  if (offer.gallery && offer.gallery.length > 0) {
+                  if (offer.gallery && Array.isArray(offer.gallery) && offer.gallery.length > 0) {
                     setGalleryIndex(0);
                     setGalleryModalOpen(true);
                   }
@@ -314,7 +314,7 @@ const OfferDetailPage = () => {
               />
               
               {/* Gallery Section - Enhanced */}
-              {offer.gallery && offer.gallery.length > 0 && (
+              {offer.gallery && Array.isArray(offer.gallery) && offer.gallery.length > 0 && (
                 <div className="relative w-full overflow-x-auto flex gap-3 pb-2 scrollbar-thin scrollbar-thumb-purple-700/50 scrollbar-track-transparent">
                   {offer.gallery.map((img, idx) => (
                     <img
@@ -393,7 +393,7 @@ const OfferDetailPage = () => {
           </div>
 
           {/* Enhanced Modal/Gallery */}
-          {galleryModalOpen && offer.gallery && offer.gallery.length > 0 && (
+          {galleryModalOpen && offer.gallery && Array.isArray(offer.gallery) && offer.gallery.length > 0 && (
             <div 
               className="fixed inset-0 z-50 bg-black/90 gallery-modal"
               onTouchStart={handleTouchStart}

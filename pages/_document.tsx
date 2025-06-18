@@ -29,47 +29,99 @@ export default function Document() {
         <meta name="twitter:description" content="Discover and unlock premium tools, apps, and games. Your gateway to exclusive content." />
         <meta name="twitter:image" content="/logo.svg" />
         
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQE75NNT98"></script>
+        {/* Google Analytics with Error Handling */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQE75NNT98" 
+          onError={() => console.warn('Google Analytics blocked by ad blocker')}></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-DQE75NNT98', {
-                page_title: document.title,
-                page_location: window.location.href,
-              });
+              try {
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-DQE75NNT98', {
+                  page_title: document.title,
+                  page_location: window.location.href,
+                });
+                console.log('Google Analytics loaded successfully');
+              } catch (error) {
+                console.warn('Google Analytics failed to load:', error);
+              }
             `
           }}
         />
         
-        {/* Hotjar Tracking Code */}
+        {/* Hotjar Tracking Code with Error Handling */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function(h,o,t,j,a,r){
-                h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-                h._hjSettings={hjid:6438859,hjsv:6};
-                a=o.getElementsByTagName('head')[0];
-                r=o.createElement('script');r.async=1;
-                r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-                a.appendChild(r);
-              })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+              try {
+                (function(h,o,t,j,a,r){
+                  h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+                  h._hjSettings={hjid:6438859,hjsv:6};
+                  a=o.getElementsByTagName('head')[0];
+                  r=o.createElement('script');r.async=1;
+                  r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+                  r.onerror = function() {
+                    console.warn('Hotjar script blocked by ad blocker');
+                  };
+                  a.appendChild(r);
+                })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+                console.log('Hotjar tracking initialized');
+              } catch (error) {
+                console.warn('Hotjar failed to load:', error);
+              }
             `
           }}
         />
         
-        {/* Microsoft Clarity Tracking Code */}
+        {/* Microsoft Clarity Tracking Code with Error Handling */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "s1facumamm");
+              try {
+                (function(c,l,a,r,i,t,y){
+                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                  t.onerror = function() {
+                    console.warn('Microsoft Clarity script blocked by ad blocker');
+                  };
+                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                })(window, document, "clarity", "script", "s1facumamm");
+                console.log('Microsoft Clarity tracking initialized');
+              } catch (error) {
+                console.warn('Microsoft Clarity failed to load:', error);
+              }
+            `
+          }}
+        />
+        
+        {/* Analytics Fallback Detection */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Check if analytics are blocked and provide fallback
+              setTimeout(function() {
+                const analyticsBlocked = {
+                  gtag: typeof window.gtag === 'undefined',
+                  hotjar: typeof window.hj === 'undefined',
+                  clarity: typeof window.clarity === 'undefined'
+                };
+                
+                if (analyticsBlocked.gtag || analyticsBlocked.hotjar || analyticsBlocked.clarity) {
+                  console.warn('Some analytics services are blocked:', analyticsBlocked);
+                  
+                  // Send notification to server about blocked analytics
+                  if (navigator.sendBeacon) {
+                    navigator.sendBeacon('/api/analytics', JSON.stringify({
+                      event: 'analytics_blocked',
+                      blocked: analyticsBlocked,
+                      userAgent: navigator.userAgent,
+                      timestamp: new Date().toISOString()
+                    }));
+                  }
+                }
+              }, 3000);
             `
           }}
         />
