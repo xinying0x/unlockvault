@@ -181,12 +181,27 @@ const OfferDetailPage = () => {
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-[#232046]/80 rounded-2xl shadow-2xl p-8 border border-purple-900/30">
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
+            <div className="space-y-4">
               <img
                 src={offer.image}
                 alt={offer.title}
                 className="w-full max-w-sm mx-auto rounded-xl shadow-lg border border-purple-900"
               />
+              
+              {/* Gallery Section - Moved here to be closer to main image */}
+              {offer.gallery && offer.gallery.length > 0 && (
+                <div className="relative w-full overflow-x-auto flex gap-3 pb-2 scrollbar-thin scrollbar-thumb-purple-700/50 scrollbar-track-transparent">
+                  {offer.gallery.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`Gallery image ${idx+1}`}
+                      className="h-20 w-auto rounded-lg shadow-md border border-purple-900/50 object-cover transition-transform duration-300 hover:scale-105 bg-gray-800 cursor-pointer flex-shrink-0"
+                      onClick={() => { setGalleryIndex(idx); setGalleryModalOpen(true); }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
             
             <div>
@@ -252,58 +267,41 @@ const OfferDetailPage = () => {
             </div>
           </div>
 
-          {/* Gallery Section */}
-          {offer.gallery && offer.gallery.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold text-purple-300 mb-6">Gallery</h2>
-              <div className="relative w-full overflow-x-auto flex gap-6 pb-4 scrollbar-thin scrollbar-thumb-purple-700/50 scrollbar-track-transparent">
-                {offer.gallery.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img}
-                    alt={`Gallery image ${idx+1}`}
-                    className="h-56 w-auto rounded-2xl shadow-lg border-2 border-purple-900/30 object-cover transition-transform duration-300 hover:scale-105 bg-gray-800 cursor-pointer"
-                    onClick={() => { setGalleryIndex(idx); setGalleryModalOpen(true); }}
+          {/* Modal/Slider */}
+          {galleryModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <button
+                className="absolute top-6 right-8 text-white text-3xl font-bold hover:text-purple-400 transition"
+                onClick={() => setGalleryModalOpen(false)}
+              >
+                ×
+              </button>
+              <button
+                className="absolute left-8 top-1/2 -translate-y-1/2 text-white text-4xl font-bold hover:text-purple-400 transition px-2"
+                onClick={() => setGalleryIndex((galleryIndex - 1 + offer.gallery.length) % offer.gallery.length)}
+              >
+                ‹
+              </button>
+              <img
+                src={offer.gallery[galleryIndex]}
+                alt={`Gallery image ${galleryIndex+1}`}
+                className="max-h-[80vh] max-w-[90vw] rounded-2xl shadow-2xl border-4 border-purple-700/50 object-contain animate-fade-in"
+              />
+              <button
+                className="absolute right-8 top-1/2 -translate-y-1/2 text-white text-4xl font-bold hover:text-purple-400 transition px-2"
+                onClick={() => setGalleryIndex((galleryIndex + 1) % offer.gallery.length)}
+              >
+                ›
+              </button>
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+                {offer.gallery.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`w-3 h-3 rounded-full ${i === galleryIndex ? 'bg-purple-500' : 'bg-gray-500/50'} border-2 border-white`}
+                    onClick={() => setGalleryIndex(i)}
                   />
                 ))}
               </div>
-              {/* Modal/Slider */}
-              {galleryModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                  <button
-                    className="absolute top-6 right-8 text-white text-3xl font-bold hover:text-purple-400 transition"
-                    onClick={() => setGalleryModalOpen(false)}
-                  >
-                    ×
-                  </button>
-                  <button
-                    className="absolute left-8 top-1/2 -translate-y-1/2 text-white text-4xl font-bold hover:text-purple-400 transition px-2"
-                    onClick={() => setGalleryIndex((galleryIndex - 1 + offer.gallery.length) % offer.gallery.length)}
-                  >
-                    ‹
-                  </button>
-                  <img
-                    src={offer.gallery[galleryIndex]}
-                    alt={`Gallery image ${galleryIndex+1}`}
-                    className="max-h-[80vh] max-w-[90vw] rounded-2xl shadow-2xl border-4 border-purple-700/50 object-contain animate-fade-in"
-                  />
-                  <button
-                    className="absolute right-8 top-1/2 -translate-y-1/2 text-white text-4xl font-bold hover:text-purple-400 transition px-2"
-                    onClick={() => setGalleryIndex((galleryIndex + 1) % offer.gallery.length)}
-                  >
-                    ›
-                  </button>
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
-                    {offer.gallery.map((_, i) => (
-                      <button
-                        key={i}
-                        className={`w-3 h-3 rounded-full ${i === galleryIndex ? 'bg-purple-500' : 'bg-gray-500/50'} border-2 border-white`}
-                        onClick={() => setGalleryIndex(i)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

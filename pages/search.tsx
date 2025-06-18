@@ -1,175 +1,418 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { GetServerSideProps } from 'next';
 import Head from 'next/head';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
-import UnlockCard from '../components/UnlockCard';
+import ResponsiveCard from '../components/ResponsiveCard';
+import SEOHead from '../components/SEOHead';
 
-interface SearchResult {
+interface Offer {
   id: string;
-  title: string;
-  type: 'tool' | 'app' | 'game';
-  category: string;
   slug: string;
-  image: string;
-  relevance: number;
+  title: string;
   description: string;
-  views?: number;
-  unlocks?: number;
+  image: string;
+  category: string;
+  type: 'tool' | 'app' | 'game';
+  views: number;
+  unlocks: number;
+  keywords: string[];
+  addedAt: string;
+  featured?: boolean;
+  rating: number;
 }
 
-const SearchPage = () => {
+interface SearchPageProps {
+  initialQuery?: string;
+  initialOffers: Offer[];
+  categories: string[];
+  totalCount: number;
+}
+
+const ITEMS_PER_PAGE = 12;
+
+const SearchPage: React.FC<SearchPageProps> = ({ 
+  initialQuery = '', 
+  initialOffers, 
+  categories, 
+  totalCount 
+}) => {
   const router = useRouter();
-  const { q } = router.query;
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredItems, setFilteredItems] = useState<SearchResult[]>([]);
-  const [selectedType, setSelectedType] = useState('all');
-  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState(initialQuery);
+  const [offers, setOffers] = useState<Offer[]>(initialOffers);
+  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('relevance');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(initialOffers.length >= ITEMS_PER_PAGE);
+  const [searchStats, setSearchStats] = useState({ total: totalCount, filtered: initialOffers.length });
 
-  useEffect(() => {
-    if (router.isReady) {
-      const initialQuery = Array.isArray(q) ? q[0] : q || '';
-      setSearchQuery(initialQuery);
-      performSearch(initialQuery, selectedType);
-    }
-  }, [q, selectedType, router.isReady]);
-
-  const performSearch = async (query: string, type: string) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (query) {
-        params.append('q', query);
-      }
-      if (type !== 'all') {
-        params.append('type', type);
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce(async (searchQuery: string, category: string, type: string, sort: string, page: number = 1) => {
+      if (!searchQuery.trim() && category === 'all' && type === 'all') {
+        setOffers(initialOffers);
+        setSearchStats({ total: totalCount, filtered: initialOffers.length });
+        return;
       }
 
-      const response = await fetch(`/api/search?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch search results');
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          q: searchQuery,
+          category: category !== 'all' ? category : '',
+          type: type !== 'all' ? type : '',
+          sort,
+          page: page.toString(),
+          limit: ITEMS_PER_PAGE.toString()
+        });
+
+        const response = await fetch(`/api/search-v2?${params}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (page === 1) {
+            setOffers(data.offers || []);
+          } else {
+            setOffers(prev => [...prev, ...(data.offers || [])]);
+          }
+          
+          setHasMore(data.hasMore || false);
+          setSearchStats({ 
+            total: data.totalCount || totalCount, 
+            filtered: data.filteredCount || data.offers?.length || 0 
+          });
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setLoading(false);
       }
-      const data: SearchResult[] = await response.json();
-      setFilteredItems(data);
-    } catch (error) {
-      console.error('Search API error:', error);
-      setFilteredItems([]);
-    } finally {
-      setLoading(false);
+    }, 300),
+    [initialOffers, totalCount]
+  );
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    setCurrentPage(1);
+    debouncedSearch(value, selectedCategory, selectedType, sortBy);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (filterType: string, value: string) => {
+    setCurrentPage(1);
+    
+    if (filterType === 'category') {
+      setSelectedCategory(value);
+    } else if (filterType === 'type') {
+      setSelectedType(value);
+    } else if (filterType === 'sort') {
+      setSortBy(value);
     }
+    
+    debouncedSearch(query, 
+      filterType === 'category' ? value : selectedCategory,
+      filterType === 'type' ? value : selectedType,
+      filterType === 'sort' ? value : sortBy
+    );
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push(`/search?q=${encodeURIComponent(searchQuery || '')}&type=${selectedType}`);
+  // Load more results
+  const loadMore = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    debouncedSearch(query, selectedCategory, selectedType, sortBy, nextPage);
   };
 
-  const getButtonText = (type: string) => {
-    switch (type) {
-      case 'game': return 'Get Hack';
-      case 'app': return 'Download';
-      default: return 'Unlock Now';
-    }
+  // Clear all filters
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedCategory('all');
+    setSelectedType('all');
+    setSortBy('relevance');
+    setCurrentPage(1);
+    setOffers(initialOffers);
+    setSearchStats({ total: totalCount, filtered: initialOffers.length });
   };
 
-  const getHref = (item: SearchResult) => {
-    return `/offers/${item.slug}`;
-  };
+  const filterOptions = useMemo(() => ({
+    types: [
+      { value: 'all', label: 'All Types', icon: '📦' },
+      { value: 'tool', label: 'Tools', icon: '🛠️' },
+      { value: 'app', label: 'Apps', icon: '📱' },
+      { value: 'game', label: 'Games', icon: '🎮' }
+    ],
+    sorts: [
+      { value: 'relevance', label: 'Most Relevant', icon: '🎯' },
+      { value: 'newest', label: 'Newest', icon: '🆕' },
+      { value: 'popular', label: 'Most Popular', icon: '🔥' },
+      { value: 'rating', label: 'Highest Rated', icon: '⭐' }
+    ]
+  }), []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white">
-      <Head>
-        <title>Search Results | UnlockVault</title>
-        <meta name="description" content="Search results for tools, games, and apps on UnlockVault." />
-      </Head>
-      
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold text-center mb-8">Search Results</h1>
-        
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tools, games, apps..."
-              className="w-full bg-[#232046] border border-purple-800 rounded-full px-6 py-4 pl-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 text-lg"
-            />
-            <button
-              type="submit"
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-400 transition text-xl"
-            >
-              🔍
-            </button>
-          </div>
-        </form>
+    <>
+      <SEOHead
+        title={`Search ${query ? `- ${query}` : ''} | UnlockVault`}
+        description={`Search through our vast library of free tools, apps, and games. ${query ? `Search results for: ${query}` : ''}`}
+        keywords={['search', 'free tools', 'apps', 'games', query].filter(Boolean)}
+        url={`https://unlockvault.com/search${query ? `?q=${encodeURIComponent(query)}` : ''}`}
+      />
 
-        {/* Type Filter */}
-        <div className="flex justify-center mb-8">
-          <div className="flex gap-4 bg-[#232046]/50 rounded-2xl p-2">
-            {[
-              { value: 'all', label: 'All' },
-              { value: 'tool', label: 'Tools' },
-              { value: 'game', label: 'Games' },
-              { value: 'app', label: 'Apps' }
-            ].map(type => (
-              <button
-                key={type.value}
-                onClick={() => setSelectedType(type.value)}
-                className={`px-6 py-2 rounded-xl font-medium transition ${
-                  selectedType === type.value
-                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
-                    : 'text-gray-300 hover:text-white'
-                }`}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        {/* Hero Section */}
+        <section className="relative py-16 sm:py-20 lg:py-24">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6 animate-fade-in">
+                🔍 Discover Free Premium Tools
+              </h1>
+              <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto animate-fade-in-up delay-200">
+                Search through thousands of free tools, apps, and games in our vast library
+              </p>
+            </div>
 
-        {/* Results Count */}
-        <div className="text-center mb-8">
-          <p className="text-gray-300">
-            {searchQuery && `Showing ${filteredItems.length} results for "${searchQuery}"`}
-            {!searchQuery && `Showing all ${filteredItems.length} items`}
-          </p>
-        </div>
-
-        {/* Loading State */}
-        {loading ? (
-          <div className="text-center py-16">
-            <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p>Searching...</p>
-          </div>
-        ) : (
-          /* Results Grid */
-          filteredItems.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-start">
-              {filteredItems.map(item => (
-                <UnlockCard
-                  key={`${item.type}-${item.slug}`}
-                  image={item.image}
-                  title={item.title}
-                  description={item.description}
-                  buttonText={getButtonText(item.type)}
-                  buttonHref={getHref(item)}
-                  offerSlug={item.slug}
-                  views={item.views}
-                  unlocks={item.unlocks}
+            {/* Search Bar */}
+            <div className="max-w-4xl mx-auto mb-8 animate-fade-in-up delay-400">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <span className="text-gray-400 text-xl">🔍</span>
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={handleSearchChange}
+                  placeholder="Search for tools, apps, games..."
+                  className="w-full pl-12 pr-4 py-4 bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-lg"
                 />
-              ))}
+                {query && (
+                  <button
+                    onClick={() => {
+                      setQuery('');
+                      debouncedSearch('', selectedCategory, selectedType, sortBy);
+                    }}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">🔍</div>
-              <h2 className="text-2xl font-bold mb-2">No results found</h2>
-              <p className="text-gray-400">Try searching with different keywords or browse our categories.</p>
+
+            {/* Filters */}
+            <div className="max-w-6xl mx-auto mb-8 animate-fade-in-up delay-600">
+              <div className="flex flex-wrap gap-4 justify-center items-center">
+                
+                {/* Category Filter */}
+                <div className="relative min-w-[160px]">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                    className="appearance-none bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full text-sm font-medium"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-400 text-sm">📁</span>
+                  </div>
+                </div>
+
+                {/* Type Filter */}
+                <div className="relative min-w-[140px]">
+                  <select
+                    value={selectedType}
+                    onChange={(e) => handleFilterChange('type', e.target.value)}
+                    className="appearance-none bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full text-sm font-medium"
+                  >
+                    {filterOptions.types.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-400 text-sm">📦</span>
+                  </div>
+                </div>
+
+                {/* Sort Filter */}
+                <div className="relative min-w-[160px]">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleFilterChange('sort', e.target.value)}
+                    className="appearance-none bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full text-sm font-medium"
+                  >
+                    {filterOptions.sorts.map(sort => (
+                      <option key={sort.value} value={sort.value}>
+                        {sort.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-400 text-sm">🔄</span>
+                  </div>
+                </div>
+
+                {/* Clear Filters */}
+                {(query || selectedCategory !== 'all' || selectedType !== 'all' || sortBy !== 'relevance') && (
+                  <button
+                    onClick={clearFilters}
+                    className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 hover:text-red-300 px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm font-medium min-w-[120px] justify-center"
+                  >
+                    <span className="text-sm">🗑️</span>
+                    <span>Clear Filters</span>
+                  </button>
+                )}
+              </div>
             </div>
-          )
-        )}
+
+            {/* Search Stats */}
+            <div className="text-center mb-8 animate-fade-in-up delay-800">
+              <p className="text-gray-400">
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    Searching...
+                  </span>
+                ) : (
+                  <>
+                    Found <span className="text-blue-400 font-bold">{searchStats.filtered.toLocaleString()}</span> results
+                    {query && ` for "${query}"`}
+                    {searchStats.total !== searchStats.filtered && (
+                      <span className="text-gray-500"> out of {searchStats.total.toLocaleString()}</span>
+                    )}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Results Section */}
+        <section className="pb-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {offers.length === 0 && !loading ? (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-2xl font-bold text-white mb-4">No results found</h3>
+                <p className="text-gray-400 mb-8">Try searching with different keywords or change your filters</p>
+                <button
+                  onClick={clearFilters}
+                  className="btn-primary"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid-responsive">
+                {offers.map((offer, index) => (
+                  <div
+                    key={offer.id}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <ResponsiveCard
+                      title={offer.title}
+                      description={offer.description}
+                      image={offer.image}
+                      category={offer.category}
+                      type={offer.type}
+                      rating={offer.rating}
+                      buttonText={offer.type === 'tool' ? 'Open Tool' : offer.type === 'app' ? 'Download App' : 'Download Game'}
+                      buttonHref={`/offers/${offer.slug}`}
+                      views={offer.views}
+                      unlocks={offer.unlocks}
+                      featured={offer.featured}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {hasMore && offers.length > 0 && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Loading...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <span>Load More</span>
+                      <span>⬇️</span>
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
-    </div>
+    </>
   );
+};
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+  try {
+    const searchQuery = (query.q as string) || '';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    
+    // Fetch initial offers and categories
+    const [offersResponse, categoriesResponse] = await Promise.all([
+      fetch(`${baseUrl}/api/search-v2?q=${encodeURIComponent(searchQuery)}&limit=${ITEMS_PER_PAGE}`),
+      fetch(`${baseUrl}/api/categories`)
+    ]);
+
+    const offersData = offersResponse.ok ? await offersResponse.json() : { offers: [], totalCount: 0 };
+    const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : [];
+
+    return {
+      props: {
+        initialQuery: searchQuery,
+        initialOffers: offersData.offers || [],
+        categories: categoriesData.map((cat: any) => cat.name) || [],
+        totalCount: offersData.totalCount || 0
+      }
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    return {
+      props: {
+        initialQuery: '',
+        initialOffers: [],
+        categories: [],
+        totalCount: 0
+      }
+    };
+  }
 };
 
 export default SearchPage; 
