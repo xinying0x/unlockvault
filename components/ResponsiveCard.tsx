@@ -48,8 +48,9 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
 
   return (
     <div className={`group relative w-full ${compact ? 'max-w-xs' : 'max-w-sm'} mx-auto`}>
-      {/* Card Container */}
-      <div className={`relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] ${compact ? 'h-80' : ''}`}>
+      {/* Card Container - Make entire card clickable */}
+      <Link href={buttonHref} className="block w-full">
+        <div className={`relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] cursor-pointer ${compact ? 'h-80' : ''}`}>
         
         {/* Featured Badge */}
         {featured && (
@@ -146,23 +147,19 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
             </div>
           </div>
 
-          {/* Action Button */}
-          <Link
-            href={buttonHref}
-            className="block w-full"
-          >
-            <button className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm' : 'py-3 px-6'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
-              <span className="flex items-center justify-center gap-2">
-                <span>{buttonText}</span>
-                <span className={compact ? 'text-sm' : 'text-lg'}>🚀</span>
-              </span>
-            </button>
-          </Link>
+          {/* Action Button - Now just visual, card click handles navigation */}
+          <div className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm' : 'py-3 px-6'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
+            <span className="flex items-center justify-center gap-2">
+              <span>{buttonText}</span>
+              <span className={compact ? 'text-sm' : 'text-lg'}>🚀</span>
+            </span>
+          </div>
         </div>
 
         {/* Hover Effect Border */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       </div>
+      </Link>
     </div>
   );
 };

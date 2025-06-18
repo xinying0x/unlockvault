@@ -88,8 +88,22 @@ export default function UnlockCard({
     router.push(buttonHref);
   };
 
+  const handleCardClick = async (e: React.MouseEvent) => {
+    // If clicking on the button, let the button handler take care of it
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
+    // Otherwise, handle the card click
+    console.log(`Card clicked, navigating to: ${buttonHref}`);
+    router.push(buttonHref);
+  };
+
   return (
-    <div className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer flex flex-col h-full">
+    <div 
+      onClick={handleCardClick}
+      className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer flex flex-col h-full"
+    >
       {/* Featured Badge */}
       {featured && (
         <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
@@ -105,8 +119,7 @@ export default function UnlockCard({
       )}
 
       {/* Image Container */}
-      <Link href={buttonHref} passHref>
-        <div className="relative h-48 overflow-hidden flex-shrink-0">
+      <div className="relative h-48 overflow-hidden flex-shrink-0">
           {!imageLoaded && !imageError && (
             <div className="absolute inset-0 bg-gray-700/50 animate-pulse flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
@@ -155,11 +168,9 @@ export default function UnlockCard({
             </div>
           </div>
         </div>
-      </Link>
 
       {/* Content - Flex grow to fill space */}
-      <Link href={buttonHref} passHref>
-        <div className="p-6 flex-grow flex flex-col">
+      <div className="p-6 flex-grow flex flex-col">
           <h3 className="text-xl font-bold text-white mb-3 line-clamp-2 group-hover:text-purple-300 transition-colors duration-300">
             {title}
           </h3>
@@ -186,7 +197,6 @@ export default function UnlockCard({
             </div>
           </div>
         </div>
-      </Link>
 
       {/* Action Button - Always at bottom */}
       <div className="mt-auto">
