@@ -2,6 +2,11 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import clientPromise from '../../lib/mongodb'
 import UAParser from 'ua-parser-js'
 
+// Global rate limit store type
+declare global {
+  var rateLimitStore: Map<string, { count: number; resetTime: number }> | undefined;
+}
+
 // Sample countries with realistic IP ranges
 const sampleData = [
   { country: 'Saudi Arabia', ipPrefix: '188.245' },
@@ -35,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { adBlock, offerId } = req.body || {}
+    const { adBlock, offerId, botDetected, fingerprint } = req.body || {}
     // Get client IP, support x-forwarded-for
     const forwarded = req.headers['x-forwarded-for']
     const ip = Array.isArray(forwarded)
@@ -43,12 +48,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       : forwarded || req.socket.remoteAddress || ''
     const cleanIp = ip.split(',')[0].trim()
 
+    // Rate limiting check - simple implementation
+    const rateLimitKey = `rate_limit_${cleanIp}`;
+    const currentTime = Date.now();
+    const timeWindow = 60000; // 1 minute
+    const maxRequests = 30;
+    
+    // Get existing rate limit data from memory (in production, use Redis)
+    if (!global.rateLimitStore) {
+      global.rateLimitStore = new Map();
+    }
+    
+    const existing = global.rateLimitStore.get(rateLimitKey) || { count: 0, resetTime: currentTime + timeWindow };
+    
+    if (currentTime > existing.resetTime) {
+      // Reset the counter
+      existing.count = 1;
+      existing.resetTime = currentTime + timeWindow;
+    } else {
+      existing.count++;
+    }
+    
+    global.rateLimitStore.set(rateLimitKey, existing);
+    
+    if (existing.count > maxRequests) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+
     // Check if this is a local/development IP
     const isLocalIP = cleanIp === '::1' || cleanIp === '127.0.0.1' || cleanIp.startsWith('192.168.') || cleanIp.startsWith('10.') || cleanIp.startsWith('172.') || cleanIp.startsWith('::ffff:');
 
-    // Bot detection via User-Agent
+    // Enhanced bot detection via User-Agent
     const ua = req.headers['user-agent'] || ''
-    const bot = /bot|crawl|spider|slurp|fetch|monitor|scan|ping|libwww|curl|wget|python-requests/i.test(ua)
+    const suspiciousPatterns = [
+      /bot|crawl|spider|slurp|fetch|monitor|scan|ping|libwww|curl|wget|python-requests/i,
+      /headless|phantom|selenium|automation|chrome-lighthouse/i,
+      /scrapy|beautifulsoup|mechanize|scraperapi/i
+    ];
+    
+    const bot = suspiciousPatterns.some(pattern => pattern.test(ua)) || botDetected || false;
+    
+    // Additional bot checks
+    const hasCommonHeaders = req.headers['accept'] && req.headers['accept-language'];
+    const hasValidReferer = req.headers['referer'] || req.headers['x-referer'];
+    const suspiciousScore = (!hasCommonHeaders ? 1 : 0) + (!hasValidReferer ? 0.5 : 0);
+    
+    const enhancedBotDetection = bot || suspiciousScore >= 1.5;
 
     // Parse User-Agent for browser, OS, and device
     const parser = new UAParser(ua);
@@ -129,7 +174,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: visitId,
       ip: finalIp, 
       country, 
-      bot, 
+      bot: enhancedBotDetection, 
       adBlock: !!adBlock, 
       vpn, 
       timestamp, 
@@ -138,7 +183,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       os, 
       deviceType, 
       trafficSource,
-      offerId: offerId || null
+      offerId: offerId || null,
+      fingerprint: fingerprint || null,
+      userAgent: ua,
+      suspiciousScore,
+      headers: {
+        accept: req.headers['accept'] || null,
+        acceptLanguage: req.headers['accept-language'] || null,
+        acceptEncoding: req.headers['accept-encoding'] || null,
+        dnt: req.headers['dnt'] || null
+      }
     };
 
     await collection.insertOne(visitData);

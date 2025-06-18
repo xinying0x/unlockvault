@@ -1,36 +1,65 @@
 {
   "name": "UnlockVault - Premium Tools & Apps",
   "short_name": "UnlockVault",
-  "description": "Access premium tools, apps, and games for free with UnlockVault",
+  "description": "Discover and unlock premium tools, apps, and games for free. Your gateway to exclusive content.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#18122B",
-  "theme_color": "#8B5CF6",
-  "orientation": "portrait",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait-primary",
   "scope": "/",
+  "lang": "en",
+  "categories": ["productivity", "utilities", "entertainment"],
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "16x16 32x32",
-      "type": "image/x-icon"
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
-      "src": "/logo.svg",
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
-      "src": "/logo.svg",
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "maskable any"
     }
   ],
-  "categories": ["productivity", "utilities", "entertainment"],
-  "lang": "en",
-  "dir": "ltr",
-  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "Search Tools",
@@ -39,37 +68,57 @@
       "url": "/search",
       "icons": [
         {
-          "src": "/logo.svg",
-          "sizes": "96x96",
-          "type": "image/svg+xml"
+          "src": "/icons/search-96x96.png",
+          "sizes": "96x96"
         }
       ]
     },
     {
-      "name": "Browse Apps",
-      "short_name": "Apps",
-      "description": "Browse premium applications",
-      "url": "/apps",
-      "icons": [
-        {
-          "src": "/logo.svg",
-          "sizes": "96x96",
-          "type": "image/svg+xml"
-        }
-      ]
-    },
-    {
-      "name": "Browse Games",
+      "name": "Popular Games",
       "short_name": "Games",
-      "description": "Browse premium games",
+      "description": "Browse popular games",
       "url": "/games",
       "icons": [
         {
-          "src": "/logo.svg",
-          "sizes": "96x96",
-          "type": "image/svg+xml"
+          "src": "/icons/games-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Trending Apps",
+      "short_name": "Apps",
+      "description": "Discover trending apps",
+      "url": "/apps",
+      "icons": [
+        {
+          "src": "/icons/apps-96x96.png",
+          "sizes": "96x96"
         }
       ]
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "UnlockVault Homepage on Mobile"
+    },
+    {
+      "src": "/screenshots/desktop-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "UnlockVault Homepage on Desktop"
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 } 

@@ -5,11 +5,11 @@ export default {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://unlockvault.com/',
+    url: 'https://unlockvault.xyz/',
     site_name: 'UnlockVault',
     images: [
       {
-        url: 'https://unlockvault.com/og-image.jpg',
+        url: 'https://unlockvault.xyz/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'UnlockVault',

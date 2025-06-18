@@ -13,7 +13,7 @@ export default function SEOHead({
   title = 'UnlockVault - Premium Tools & Apps for Free',
   description = 'Access premium tools, cracked apps, game hacks, and AI tools for free. Unlock your potential with UnlockVault.',
   image = '/og-image.jpg',
-  url = 'https://unlockvault.com',
+  url = 'https://unlockvault.xyz',
   type = 'website',
   keywords = ['premium tools', 'cracked apps', 'game hacks', 'AI tools', 'free software']
 }: SEOHeadProps) {

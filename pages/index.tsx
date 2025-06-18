@@ -3,9 +3,13 @@ import Link from 'next/link';
 import CategoriesSection from '../components/CategoriesSection';
 import SEOHead from '../components/SEOHead';
 import UnlockCard from '../components/UnlockCard';
-
-
+import EnhancedButton from '../components/EnhancedButton';
+import CountdownTimer from '../components/CountdownTimer';
+import LazyImage from '../components/LazyImage';
+import SecurityIndicators from '../components/SecurityIndicators';
 import Image from 'next/image';
+import { initGA, trackPageView, trackTrafficSource, trackHumanActivity } from '../lib/analytics';
+import { advancedBotDetection } from '../lib/botProtection';
 
 interface Offer {
   id: string;
@@ -99,10 +103,31 @@ const HomePage: React.FC = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [useDummyStats, setUseDummyStats] = useState(false);
+  const [botDetected, setBotDetected] = useState(false);
+  const [countdownTime, setCountdownTime] = useState(3600); // 1 hour special offer
 
   const handleScrollToTools = () => {
     toolsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Initialize Analytics and Bot Protection
+  useEffect(() => {
+    // Initialize Google Analytics
+    initGA();
+    trackPageView(window.location.href, 'UnlockVault - Premium Tools & Apps');
+    trackTrafficSource();
+    
+    // Initialize Human Activity Tracking
+    trackHumanActivity();
+    
+    // Advanced Bot Detection
+    advancedBotDetection().then(result => {
+      setBotDetected(result.isBot);
+      if (result.isBot) {
+        console.warn('Bot detected:', result.reasons);
+      }
+    });
+  }, []);
 
   // Fetch featured offers and stats from API
   useEffect(() => {
@@ -248,7 +273,7 @@ const HomePage: React.FC = () => {
         title="UnlockVault - Free Premium Tools & Apps"
         description="Access premium tools, cracked apps, game hacks, and AI tools for free. Join thousands of users unlocking their potential with UnlockVault."
         keywords={['premium tools', 'cracked apps', 'game hacks', 'AI tools', 'free software', 'unlock vault']}
-        url="https://unlockvault.com"
+        url="https://unlockvault.xyz"
       />
 
       {/* Animated Background Elements */}
@@ -299,21 +324,28 @@ const HomePage: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up delay-600">
-              <Link 
-                href="/search" 
-                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 overflow-hidden text-lg font-bold text-white rounded-2xl bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl animate-fade-in-up delay-700"
+              <EnhancedButton
+                href="/search"
+                type="primary"
+                size="lg"
+                glowEffect={true}
+                pulseEffect={false}
+                icon={<span>🚀</span>}
+                className="animate-fade-in-up delay-700"
               >
-                <span className="relative z-10">🚀 Start Exploring</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-400 rounded-full animate-ping"></div>
-              </Link>
-              <button
+                Start Exploring
+              </EnhancedButton>
+              <EnhancedButton
+                href="#tools"
+                type="secondary"
+                size="lg"
+                glowEffect={true}
+                icon={<span>💡</span>}
                 onClick={handleScrollToTools}
-                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 overflow-hidden text-lg font-bold text-white rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl animate-fade-in-up delay-800"
+                className="animate-fade-in-up delay-800"
               >
-                <span className="relative z-10">💡 How It Works</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-400 to-orange-300 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-              </button>
+                How It Works
+              </EnhancedButton>
             </div>
           </div>
         </section>
@@ -369,6 +401,37 @@ const HomePage: React.FC = () => {
                 </Link>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Special Offer Countdown */}
+        <section className="py-12 px-4 relative z-10">
+          <div className="max-w-4xl mx-auto">
+            <CountdownTimer
+              duration={countdownTime}
+              title="🎯 Special Access Pass - Limited Time!"
+              subtitle="Unlock premium tools with exclusive access"
+              type="offer"
+              size="lg"
+              glowEffect={true}
+              pulseOnLowTime={true}
+              onComplete={() => setCountdownTime(7200)} // Reset to 2 hours
+              className="mx-auto"
+            />
+          </div>
+        </section>
+
+        {/* Security & Trust Section */}
+        <section className="py-16 px-4 relative z-10 bg-gradient-to-br from-gray-900/30 to-purple-900/20 backdrop-blur-sm">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-extrabold text-center mb-8 bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
+              🛡️ Your Security is Our Priority
+            </h2>
+            <SecurityIndicators 
+              showSSL={true}
+              showTrustBadges={true}
+              className="max-w-3xl mx-auto"
+            />
           </div>
         </section>
 

@@ -4,6 +4,7 @@ import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
+import Script from 'next/script';
 import Navbar from '../components/Navbar';
 import ProgressBar from '../components/ProgressBar';
 import { AuthProvider } from '../hooks/useAuth';
@@ -13,6 +14,9 @@ import { DefaultSeo } from 'next-seo';
 import SEO from '../next-seo.config';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { logger } from '../lib/logger';
+import { GA_TRACKING_ID, initGA, trackPageView, trackError } from '../lib/analytics';
+import { advancedBotDetection, trackHumanActivity } from '../lib/botProtection';
+import { initHeatMapTracking } from '../lib/heatmaps';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [isVPN, setIsVPN] = useState(false);
@@ -20,6 +24,8 @@ function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
+  const [botDetected, setBotDetected] = useState(false);
+  const [analyticsLoaded, setAnalyticsLoaded] = useState(false);
 
   // Adblock detection logic
   const [adBlockDetected, setAdBlockDetected] = useState(false);
@@ -40,6 +46,70 @@ function MyApp({ Component, pageProps }: AppProps) {
     detectAdBlock();
   }, []);
 
+  // Initialize Analytics and Bot Protection
+  useEffect(() => {
+    const initializeAnalytics = async () => {
+      try {
+        // Initialize Google Analytics
+        if (typeof window !== 'undefined' && !analyticsLoaded) {
+          initGA();
+          setAnalyticsLoaded(true);
+        }
+
+        // Advanced Bot Detection
+        const botResult = await advancedBotDetection();
+        setBotDetected(botResult.isBot);
+        
+        if (botResult.isBot) {
+          logger.warn('Bot detected:', botResult.reasons);
+          trackError('Bot detected: ' + botResult.reasons.join(', '), router.pathname);
+        } else {
+          // Track human activity
+          trackHumanActivity();
+          
+          // Initialize Heat Maps (only for humans)
+          const cleanupHeatMaps = initHeatMapTracking();
+          
+          // Register Service Worker for PWA
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+              .then((registration) => {
+                console.log('SW registered:', registration);
+              })
+              .catch((error) => {
+                console.log('SW registration failed:', error);
+              });
+          }
+          
+          // Cleanup on unmount
+          return cleanupHeatMaps;
+        }
+      } catch (error) {
+        logger.error('Error initializing analytics/bot protection:', error);
+        trackError('Analytics initialization error: ' + error, router.pathname);
+      }
+    };
+
+    initializeAnalytics();
+  }, [router.pathname, analyticsLoaded]);
+
+  // Track page views
+  useEffect(() => {
+    if (analyticsLoaded && !botDetected) {
+      const handleRouteChange = (url: string) => {
+        trackPageView(url);
+      };
+      
+      // Track initial page view
+      trackPageView(window.location.href);
+      
+      router.events.on('routeChangeComplete', handleRouteChange);
+      return () => {
+        router.events.off('routeChangeComplete', handleRouteChange);
+      };
+    }
+  }, [router.events, analyticsLoaded, botDetected]);
+
   // Track visit logic
   useEffect(() => {
     const trackVisit = async () => {
@@ -49,17 +119,21 @@ function MyApp({ Component, pageProps }: AppProps) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ adBlock: adBlockDetected }),
+          body: JSON.stringify({ 
+            adBlock: adBlockDetected,
+            botDetected: botDetected 
+          }),
         });
         logger.debug('Visit tracked successfully');
       } catch (error) {
         logger.error('Error tracking visit', error);
+        trackError('Visit tracking error: ' + error, router.pathname);
       }
     };
 
     // Only track visit once per page load
     trackVisit();
-  }, [adBlockDetected]); // Rerun if adBlockDetected status changes
+  }, [adBlockDetected, botDetected, router.pathname]); // Rerun if status changes
 
   useEffect(() => {
     // Remove VPN check due to API blocking and for deployment readiness
@@ -136,6 +210,47 @@ function MyApp({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <ToastProvider>
           <DefaultSeo {...SEO} />
+          
+          {/* Google Analytics */}
+          <Script
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_TRACKING_ID}', {
+                  page_title: document.title,
+                  page_location: window.location.href,
+                });
+              `,
+            }}
+          />
+          
+          {/* Bot Protection Overlay */}
+          {botDetected && (
+            <div className="bot-protection-overlay active">
+              <div className="text-center p-8">
+                <div className="text-6xl mb-4">🤖</div>
+                <h2 className="text-2xl font-bold mb-4">Automated Traffic Detected</h2>
+                <p className="text-gray-300 mb-6">
+                  This page is for human visitors only. Please ensure you're using a regular browser.
+                </p>
+                <button 
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                  onClick={() => window.location.reload()}
+                >
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          )}
+          
           <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E]">
             {/* Progress Bar */}
             <ProgressBar />

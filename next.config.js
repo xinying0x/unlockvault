@@ -1,10 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  
+  // Enhanced image optimization
   images: {
-    domains: ['localhost', 'unlockvault.com', 'cdn.unlockvault.com', 'i.pinimg.com'],
+    domains: ['localhost', 'unlockvault.xyz', 'cdn.unlockvault.xyz', 'unlockvault.com', 'cdn.unlockvault.com', 'i.pinimg.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 86400,
+  },
+
+  // Performance optimizations
+  experimental: {
+    scrollRestoration: true,
   },
   async redirects() {
     return [
@@ -18,7 +28,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/api/(.*)',
+        source: '/api/:path*',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
@@ -53,7 +63,7 @@ const nextConfig = {
       },
     ];
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { dev, isServer }) => {
     return config;
   }
 };

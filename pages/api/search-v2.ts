@@ -57,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Apply search filters
     if (query) {
-      const queryLower = query.toLowerCase();
+      const queryLower = Array.isArray(query) ? query[0].toLowerCase() : query.toLowerCase();
       filteredOffers = filteredOffers.filter((offer: any) => 
         offer.title.toLowerCase().includes(queryLower) ||
         offer.description.toLowerCase().includes(queryLower) ||
@@ -69,8 +69,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (category && category !== 'all') {
+      const categoryLower = Array.isArray(category) ? category[0].toLowerCase() : category.toLowerCase();
       filteredOffers = filteredOffers.filter((offer: any) => 
-        offer.category.toLowerCase().includes(category.toLowerCase())
+        offer.category.toLowerCase().includes(categoryLower)
       );
     }
 
