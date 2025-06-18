@@ -206,7 +206,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         {/* Hero Section */}
-        <section className="relative py-16 sm:py-20 lg:py-24">
+        <section className="relative pt-12 pb-4">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             

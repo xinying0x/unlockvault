@@ -34,9 +34,10 @@ const OfferDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{x: number, y: number} | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
 
   useEffect(() => {
     if (id && typeof id === 'string') {
@@ -97,20 +98,33 @@ const OfferDetailPage = () => {
   // Touch/Swipe handling
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
-    setTouchStart(e.touches[0].clientX);
+    setTouchStart({
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    });
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.touches[0].clientX);
+    setTouchEnd({
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    });
   };
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    
+    const deltaX = touchStart.x - touchEnd.x;
+    const deltaY = touchStart.y - touchEnd.y;
+    
+    const isLeftSwipe = deltaX > 50 && Math.abs(deltaY) < 100;
+    const isRightSwipe = deltaX < -50 && Math.abs(deltaY) < 100;
+    const isDownSwipe = deltaY < -100 && Math.abs(deltaX) < 100; // التمرير للأسفل
 
-    if (isLeftSwipe) {
+    if (isDownSwipe) {
+      // إغلاق المعرض عند التمرير للأسفل
+      setGalleryModalOpen(false);
+    } else if (isLeftSwipe) {
       nextImage();
     } else if (isRightSwipe) {
       prevImage();
@@ -144,6 +158,13 @@ const OfferDetailPage = () => {
   // Mouse wheel navigation
   const handleWheelNavigation = (e: React.WheelEvent) => {
     e.preventDefault();
+    
+    // إذا كان التمرير للأسفل بقوة، أغلق المعرض
+    if (e.deltaY > 100) {
+      setGalleryModalOpen(false);
+      return;
+    }
+    
     if (e.deltaY > 0) {
       nextImage();
     } else {
@@ -155,9 +176,17 @@ const OfferDetailPage = () => {
     if (galleryModalOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+      setShowInstructions(true);
+      
+      // إخفاء التعليمات بعد 5 ثوانٍ
+      const timer = setTimeout(() => {
+        setShowInstructions(false);
+      }, 5000);
+      
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
         document.body.style.overflow = 'auto';
+        clearTimeout(timer);
       };
     }
   }, [galleryModalOpen, handleKeyDown]);
@@ -366,17 +395,21 @@ const OfferDetailPage = () => {
           {/* Enhanced Modal/Gallery */}
           {galleryModalOpen && offer.gallery && offer.gallery.length > 0 && (
             <div 
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 gallery-modal"
+              className="fixed inset-0 z-50 bg-black/90 gallery-modal"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onWheel={handleWheelNavigation}
+              onClick={() => setGalleryModalOpen(false)}
             >
               {/* Close Button */}
               <button
                 className="absolute top-4 right-4 z-10 w-12 h-12 bg-black/50 rounded-full text-white text-2xl font-bold gallery-nav-btn flex items-center justify-center"
-                onClick={() => setGalleryModalOpen(false)}
-                aria-label="إغلاق المعرض"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setGalleryModalOpen(false);
+                }}
+                aria-label="Close Gallery"
               >
                 ×
               </button>
@@ -384,33 +417,40 @@ const OfferDetailPage = () => {
               {/* Previous Button */}
               <button
                 className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/50 rounded-full text-white text-2xl font-bold gallery-nav-btn flex items-center justify-center"
-                onClick={prevImage}
-                aria-label="الصورة السابقة"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                aria-label="Previous Image"
               >
                 ‹
               </button>
 
               {/* Image Container */}
-              <div className="relative flex items-center justify-center w-full h-full px-16 py-16 gallery-image-container">
+              <div className="flex items-center justify-center w-full h-full p-4">
                 {imageLoading && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full gallery-loading"></div>
+                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
-              <img
-                src={offer.gallery[galleryIndex]}
+                <img
+                  src={offer.gallery[galleryIndex]}
                   alt={`Gallery image ${galleryIndex + 1}`}
-                  className="max-h-full max-w-full rounded-xl shadow-2xl border-2 border-purple-500/30 object-contain gallery-image gallery-image-transition"
+                  className="max-h-full max-w-full rounded-xl shadow-2xl border-2 border-purple-500/30 object-contain"
                   onLoad={() => setImageLoading(false)}
                   onError={() => setImageLoading(false)}
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
 
               {/* Next Button */}
               <button
                 className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/50 rounded-full text-white text-2xl font-bold gallery-nav-btn flex items-center justify-center"
-                onClick={nextImage}
-                aria-label="الصورة التالية"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                aria-label="Next Image"
               >
                 ›
               </button>
@@ -419,6 +459,20 @@ const OfferDetailPage = () => {
               <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm gallery-counter">
                 {galleryIndex + 1} / {offer.gallery.length}
               </div>
+
+              {/* Instructions for mobile */}
+              {showInstructions && (
+                <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-xs opacity-90 sm:hidden animate-pulse transition-opacity duration-500">
+                  👇 Swipe down to close
+                </div>
+              )}
+
+              {/* Instructions for desktop */}
+              {showInstructions && (
+                <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-xs opacity-90 hidden sm:block animate-pulse transition-opacity duration-500">
+                  🖱️ Click outside or scroll down to close
+                </div>
+              )}
 
               {/* Thumbnail Navigation */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-lg overflow-x-auto px-4 py-2 bg-black/30 rounded-full backdrop-blur-sm">
@@ -430,7 +484,10 @@ const OfferDetailPage = () => {
                         ? 'border-purple-400 active' 
                         : 'border-gray-500/50 hover:border-purple-300'
                     }`}
-                    onClick={() => goToImage(i)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToImage(i);
+                    }}
                   >
                     <img
                       src={img}

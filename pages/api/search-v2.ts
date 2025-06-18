@@ -3,6 +3,8 @@ import clientPromise from '../../lib/mongodb';
 import { logger } from '../../lib/logger';
 import { cache } from '../../lib/cache';
 import { searchRateLimit } from '../../lib/rateLimit';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -45,136 +47,100 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.json(cachedResult);
     }
 
-    const client = await clientPromise;
-    const db = client.db('unlockvault');
-    const collection = db.collection('offers');
-
-    // Build search pipeline
-    let pipeline: any[] = [];
-
-    // Match stage
-    let matchStage: any = {};
-
+    // Use JSON file as primary data source
+    const filePath = path.join(process.cwd(), 'data', 'offers.json');
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const allOffers = JSON.parse(fileContents);
+    
+    // Filter offers based on status
+    let filteredOffers = allOffers.filter((offer: any) => offer.status === 'active');
+    
+    // Apply search filters
     if (query) {
-      matchStage.$or = [
-        { title: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } },
-        { keywords: { $regex: query, $options: 'i' } },
-        { category: { $regex: query, $options: 'i' } }
-      ];
+      const queryLower = query.toLowerCase();
+      filteredOffers = filteredOffers.filter((offer: any) => 
+        offer.title.toLowerCase().includes(queryLower) ||
+        offer.description.toLowerCase().includes(queryLower) ||
+        offer.category.toLowerCase().includes(queryLower) ||
+        (offer.keywords && offer.keywords.some((keyword: string) => 
+          keyword.toLowerCase().includes(queryLower)
+        ))
+      );
     }
 
     if (category && category !== 'all') {
-      matchStage.category = { $regex: category, $options: 'i' };
+      filteredOffers = filteredOffers.filter((offer: any) => 
+        offer.category.toLowerCase().includes(category.toLowerCase())
+      );
     }
 
     if (type && type !== 'all') {
-      matchStage.type = type;
+      filteredOffers = filteredOffers.filter((offer: any) => offer.type === type);
     }
 
-    if (Object.keys(matchStage).length > 0) {
-      pipeline.push({ $match: matchStage });
-    }
-
-    // Add fields for sorting
-    pipeline.push({
-      $addFields: {
-        relevanceScore: query ? {
-          $add: [
-            { $cond: [{ $regexMatch: { input: "$title", regex: query, options: "i" } }, 10, 0] },
-            { $cond: [{ $regexMatch: { input: "$description", regex: query, options: "i" } }, 5, 0] },
-            { $cond: [{ $regexMatch: { input: "$keywords", regex: query, options: "i" } }, 3, 0] }
-          ]
-        } : 0,
-        popularityScore: { $add: [{ $multiply: ["$views", 0.3] }, { $multiply: ["$unlocks", 0.7] }] }
-      }
-    });
-
-    // Sort stage
-    let sortStage: any = {};
+    // Sort offers
     switch (sort) {
       case 'newest':
-        sortStage = { addedAt: -1 };
+        filteredOffers.sort((a: any, b: any) => 
+          new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
+        );
         break;
       case 'popular':
-        sortStage = { popularityScore: -1 };
+        filteredOffers.sort((a: any, b: any) => 
+          (b.views * 0.3 + b.unlocks * 0.7) - (a.views * 0.3 + a.unlocks * 0.7)
+        );
         break;
       case 'views':
-        sortStage = { views: -1 };
+        filteredOffers.sort((a: any, b: any) => b.views - a.views);
         break;
       case 'unlocks':
-        sortStage = { unlocks: -1 };
+        filteredOffers.sort((a: any, b: any) => b.unlocks - a.unlocks);
         break;
       case 'relevance':
       default:
-        if (query) {
-          sortStage = { relevanceScore: -1, popularityScore: -1 };
-        } else {
-          sortStage = { featured: -1, popularityScore: -1 };
+        if (!query) {
+          filteredOffers.sort((a: any, b: any) => {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return (b.views * 0.3 + b.unlocks * 0.7) - (a.views * 0.3 + a.unlocks * 0.7);
+          });
         }
         break;
     }
 
-    pipeline.push({ $sort: sortStage });
-
-    // Get total count for pagination
-    const countPipeline = [...pipeline, { $count: "total" }];
-    const totalResult = await collection.aggregate(countPipeline).toArray();
-    const totalCount = totalResult[0]?.total || 0;
-    const filteredCount = totalCount;
-
-    // Add pagination
-    pipeline.push({ $skip: skip });
-    pipeline.push({ $limit: limitNum });
-
-    // Project final fields
-    pipeline.push({
-      $project: {
-        id: { $toString: "$_id" },
-        slug: 1,
-        title: 1,
-        description: 1,
-        image: 1,
-        category: 1,
-        type: 1,
-        views: 1,
-        unlocks: 1,
-        addedAt: 1,
-        featured: 1,
-        _id: 0
-      }
-    });
-
-    // Execute search
-    const results = await collection.aggregate(pipeline).toArray();
-    const hasMore = skip + limitNum < filteredCount;
-
+    // Apply pagination
+    const totalFilteredCount = filteredOffers.length;
+    const startIndex = skip;
+    const endIndex = skip + limitNum;
+    const paginatedOffers = filteredOffers.slice(startIndex, endIndex);
+    
+    const hasMore = endIndex < totalFilteredCount;
     const responseData = {
-      offers: results.map(result => ({
-        id: result.id,
-        slug: result.slug,
-        title: result.title,
-        description: result.description,
-        image: result.image,
-        category: result.category,
-        type: result.type,
-        views: result.views,
-        unlocks: result.unlocks,
-        keywords: [],
-        addedAt: new Date().toISOString(),
-        featured: false,
-        rating: 4.5
+      offers: paginatedOffers.map((offer: any) => ({
+        id: offer.id,
+        slug: offer.slug,
+        title: offer.title,
+        description: offer.description,
+        image: offer.image,
+        category: offer.category,
+        type: offer.type,
+        views: offer.views || 0,
+        unlocks: offer.unlocks || 0,
+        keywords: offer.keywords || [],
+        addedAt: offer.addedAt || new Date().toISOString(),
+        featured: offer.featured || false,
+        rating: offer.rating || 4.5
       })),
-      totalCount,
-      filteredCount,
+      totalCount: totalFilteredCount,
+      filteredCount: totalFilteredCount,
       hasMore,
       currentPage: pageNum,
-      totalPages: Math.ceil(filteredCount / limitNum)
+      totalPages: Math.ceil(totalFilteredCount / limitNum)
     };
-
+    
     // Cache results for 5 minutes
     cache.set(cacheKey, responseData, 5);
-
+    
     const duration = Date.now() - startTime;
     
     if (duration > 1000) {
@@ -183,7 +149,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         query, 
         type, 
         category, 
-        resultCount: results.length,
+        resultCount: responseData.offers.length,
         ip: clientIP
       });
     }
@@ -198,87 +164,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       duration 
     });
 
-    // Fallback to dummy data if MongoDB is not available
-    const dummyOffers = [
-      {
-        id: 'dummy-1',
-        slug: 'adobe-photoshop-2024',
-        title: 'Adobe Photoshop 2024',
-        description: 'Professional photo editing software with advanced features',
-        image: '/images/placeholder.png',
-        category: 'Design',
-        type: 'app' as const,
-        views: 15420,
-        unlocks: 8932,
-        keywords: ['photoshop', 'adobe', 'design', 'photo editing'],
-        addedAt: new Date().toISOString(),
-        featured: true,
-        rating: 4.8
-      },
-      {
-        id: 'dummy-2',
-        slug: 'microsoft-office-365',
-        title: 'Microsoft Office 365',
-        description: 'Complete office suite with Word, Excel, PowerPoint and more',
-        image: '/images/placeholder.png',
-        category: 'Productivity',
-        type: 'app' as const,
-        views: 23150,
-        unlocks: 12043,
-        keywords: ['office', 'microsoft', 'word', 'excel', 'powerpoint'],
-        addedAt: new Date().toISOString(),
-        featured: true,
-        rating: 4.7
-      },
-      {
-        id: 'dummy-3',
-        slug: 'call-of-duty-warzone',
-        title: 'Call of Duty: Warzone',
-        description: 'Free-to-play battle royale game with intense action',
-        image: '/images/placeholder.png',
-        category: 'Games',
-        type: 'game' as const,
-        views: 45230,
-        unlocks: 28901,
-        keywords: ['cod', 'warzone', 'battle royale', 'fps'],
-        addedAt: new Date().toISOString(),
-        featured: false,
-        rating: 4.5
-      }
-    ];
-
-    // Apply basic filtering to dummy data
-    let filteredDummy = dummyOffers;
-    const queryStr = (req.query.q as string || '').toLowerCase();
-    const categoryStr = (req.query.category as string || '');
-    const typeStr = (req.query.type as string || '');
-
-    if (queryStr) {
-      filteredDummy = filteredDummy.filter(offer => 
-        offer.title.toLowerCase().includes(queryStr) ||
-        offer.description.toLowerCase().includes(queryStr) ||
-        offer.category.toLowerCase().includes(queryStr)
-      );
-    }
-
-    if (categoryStr && categoryStr !== 'all') {
-      filteredDummy = filteredDummy.filter(offer => 
-        offer.category.toLowerCase().includes(categoryStr.toLowerCase())
-      );
-    }
-
-    if (typeStr && typeStr !== 'all') {
-      filteredDummy = filteredDummy.filter(offer => offer.type === typeStr);
-    }
-
+    // Return empty results on error instead of dummy data
     res.status(200).json({
-      offers: filteredDummy,
-      totalCount: filteredDummy.length,
-      filteredCount: filteredDummy.length,
+      offers: [],
+      totalCount: 0,
+      filteredCount: 0,
       hasMore: false,
       currentPage: 1,
-      totalPages: 1,
-      fallback: true
+      totalPages: 0,
+      error: 'Search temporarily unavailable'
     });
   }
 } 

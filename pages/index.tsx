@@ -4,7 +4,7 @@ import CategoriesSection from '../components/CategoriesSection';
 import SEOHead from '../components/SEOHead';
 import UnlockCard from '../components/UnlockCard';
 
-import BackToTop from '../components/BackToTop';
+
 import Image from 'next/image';
 
 interface Offer {
@@ -454,8 +454,6 @@ const HomePage: React.FC = () => {
           </section>
         )}
       </main>
-
-      <BackToTop />
 
       {/* Footer Section */}
       <footer className="bg-gray-900/50 backdrop-blur-sm border-t border-purple-900/30 py-8 px-4 text-center text-gray-400 text-sm">
