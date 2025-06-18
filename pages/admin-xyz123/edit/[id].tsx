@@ -61,6 +61,22 @@ const EditOfferPage: React.FC = () => {
         throw new Error('Failed to fetch offer data');
       }
       const data = await response.json();
+      
+      // Fix gallery data if it's a string
+      if (data.gallery && typeof data.gallery === 'string') {
+        try {
+          data.gallery = JSON.parse(data.gallery);
+        } catch (e) {
+          console.error('Error parsing gallery:', e);
+          data.gallery = [];
+        }
+      }
+      
+      // Ensure gallery is always an array
+      if (!Array.isArray(data.gallery)) {
+        data.gallery = [];
+      }
+      
       setOfferData({ ...data, lockerLinks: data.lockerLinks || {} });
       // Add any custom categories from the fetched offer to the categories list
       if (data.category && !categories.includes(data.category)) {

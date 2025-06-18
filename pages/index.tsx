@@ -421,19 +421,7 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* Security & Trust Section */}
-        <section className="py-16 px-4 relative z-10 bg-gradient-to-br from-gray-900/30 to-purple-900/20 backdrop-blur-sm">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-extrabold text-center mb-8 bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-              🛡️ Your Security is Our Priority
-            </h2>
-            <SecurityIndicators 
-              showSSL={true}
-              showTrustBadges={true}
-              className="max-w-3xl mx-auto"
-            />
-          </div>
-        </section>
+
 
         {/* Features Section */}
         <section className="py-20 px-4 relative z-10">

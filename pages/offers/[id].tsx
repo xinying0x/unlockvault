@@ -66,6 +66,21 @@ const OfferDetailPage = () => {
         throw new Error('No data received');
       }
 
+      // Fix gallery data if it's a string
+      if (data.gallery && typeof data.gallery === 'string') {
+        try {
+          data.gallery = JSON.parse(data.gallery);
+        } catch (e) {
+          console.error('Error parsing gallery:', e);
+          data.gallery = [];
+        }
+      }
+      
+      // Ensure gallery is always an array
+      if (!Array.isArray(data.gallery)) {
+        data.gallery = [];
+      }
+
       setOffer({ ...data, lockerLinks: data.lockerLinks || {} });
     } catch (err: any) {
       console.error('Failed to fetch offer:', err);
