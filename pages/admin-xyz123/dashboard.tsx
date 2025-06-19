@@ -656,13 +656,65 @@ const AdminDashboard: React.FC = () => {
           <ActivityFeed />
         </div>
 
-          {/* Top Offers */}
+        {/* Recent Offers */}
+        <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+            <span>🆕</span>
+            <span>Recently Added Offers</span>
+          </h2>
+          {dashboardData && dashboardData.recentTools && dashboardData.recentTools.length > 0 ? (
+            <div className="space-y-3">
+              {dashboardData.recentTools.slice(0, 5).map((offer: any) => (
+                <div key={offer.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800/70 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold truncate mb-1">{offer.title}</h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <span>👁️</span>
+                        <span>{formatNumber(offer.views)}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span>🔓</span>
+                        <span>{formatNumber(offer.unlocks)}</span>
+                      </span>
+                      {offer.addedAt && (
+                        <span className="flex items-center gap-1">
+                          <span>🕒</span>
+                          <span>{new Date(offer.addedAt).toLocaleDateString()}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 ml-4">
+                    <Link href={`/admin-xyz123/edit/${offer.id}`}>
+                      <span className="px-3 py-1 bg-purple-600/20 text-purple-400 rounded-lg text-sm hover:bg-purple-600/30 transition-colors cursor-pointer">
+                        Edit
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-2">📝</div>
+              <p className="text-gray-400">No recent offers available.</p>
+              <Link href="/admin-xyz123/new">
+                <span className="inline-block mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer">
+                  Add New Offer
+                </span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Top Offers */}
         <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
           <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <span>🏆</span>
             <span>Top Performing Offers</span>
           </h2>
-            {dashboardData && dashboardData.topOffers && dashboardData.topOffers.length > 0 ? (
+          {dashboardData && dashboardData.topOffers && dashboardData.topOffers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {dashboardData.topOffers.slice(0, 6).map((offer, index) => (
                 <div key={offer.id} className="bg-slate-800/50 p-4 rounded-lg hover:bg-slate-800/70 transition-colors">

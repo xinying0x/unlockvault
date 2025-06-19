@@ -278,6 +278,7 @@ const ToolsPage: React.FC = () => {
                 offerSlug={offer.slug}
                 views={useDummyStats ? Math.floor(Math.random() * 1000) + 500 : offer.views}
                 unlocks={useDummyStats ? Math.floor(Math.random() * 500) + 100 : offer.unlocks}
+                addedAt={offer.addedAt}
               />
             ))}
           </div>

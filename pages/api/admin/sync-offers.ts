@@ -4,7 +4,7 @@ import { verifyToken } from '../../../lib/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
-  const token = req.cookies.adminToken || req.headers.authorization?.replace('Bearer ', '');
+  const token = req.cookies['auth-token'] || req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
     return res.status(401).json({ error: 'No authentication token' });
   }

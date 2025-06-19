@@ -308,7 +308,7 @@ const OfferDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white relative">
       <Head>
         <title>{offer.title} | UnlockVault</title>
         <meta name="description" content={offer.description} />
@@ -321,6 +321,45 @@ const OfferDetailPage = () => {
       </Head>
       
       <div className="max-w-4xl mx-auto px-4 py-12">
+        {/* Navigation Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white rounded-lg transition-all duration-300 border border-gray-600/30 hover:border-gray-500/50 hover:scale-105"
+          >
+            <svg 
+              className="w-5 h-5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+              />
+            </svg>
+            Back
+          </button>
+          
+                     {/* Breadcrumb */}
+           <nav className="hidden md:flex items-center gap-2 text-sm text-gray-400">
+             <Link href="/" className="hover:text-white transition-colors">
+               Home
+             </Link>
+             <span>/</span>
+             <Link 
+               href={`/${offer?.type === 'tool' ? 'tools' : offer?.type === 'app' ? 'apps' : 'games'}`} 
+               className="hover:text-white transition-colors"
+             >
+               {offer?.type === 'tool' ? 'Tools' : offer?.type === 'app' ? 'Apps' : 'Games'}
+             </Link>
+             <span>/</span>
+             <span className="text-white">{offer?.title}</span>
+           </nav>
+        </div>
+        
         <div className="bg-[#232046]/80 rounded-2xl shadow-2xl p-8 border border-purple-900/30">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="space-y-4">
@@ -355,6 +394,20 @@ const OfferDetailPage = () => {
             <div>
               <h1 className="text-3xl font-bold mb-4">{offer.title}</h1>
               <p className="text-gray-300 mb-6">{offer.description}</p>
+              
+              {/* Publication Date */}
+              {offer.addedAt && (
+                <div className="mb-4 flex items-center gap-2 text-sm text-gray-400">
+                  <span>🕒</span>
+                  <span>Published: {new Date(offer.addedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</span>
+                </div>
+              )}
               
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -412,6 +465,50 @@ const OfferDetailPage = () => {
                   VPN/Proxy detected. Some offers may not be available.
                 </div>
               )}
+            </div>
+          </div>
+          
+          {/* Bottom Navigation */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-lg transition-all duration-300 border border-purple-500/30 hover:border-purple-400/50"
+            >
+              <svg 
+                className="w-5 h-5" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+                />
+              </svg>
+                             Go Back
+            </button>
+            
+            <div className="flex gap-3">
+                             <Link 
+                 href="/" 
+                 className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-300 text-sm"
+               >
+                 🏠 Home
+               </Link>
+               <Link 
+                 href="/search" 
+                 className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-300 text-sm"
+               >
+                 🔍 Search
+               </Link>
+               <Link 
+                 href={`/${offer?.type === 'tool' ? 'tools' : offer?.type === 'app' ? 'apps' : 'games'}`}
+                 className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-300 text-sm"
+               >
+                 {offer?.type === 'tool' ? '🛠️ Tools' : offer?.type === 'app' ? '📱 Apps' : '🎮 Games'}
+               </Link>
             </div>
           </div>
 
@@ -524,6 +621,27 @@ const OfferDetailPage = () => {
           )}
         </div>
       </div>
+      
+      {/* Floating Back Button */}
+      <button
+        onClick={() => router.back()}
+        className="fixed bottom-6 left-6 z-40 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
+        title="Go Back"
+      >
+        <svg 
+          className="w-6 h-6" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+          />
+        </svg>
+      </button>
     </div>
   );
 };

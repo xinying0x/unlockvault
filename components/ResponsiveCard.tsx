@@ -15,6 +15,7 @@ interface ResponsiveCardProps {
   unlocks: number;
   featured?: boolean;
   compact?: boolean;
+  addedAt?: string;
 }
 
 const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
@@ -29,7 +30,8 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
   views,
   unlocks,
   featured = false,
-  compact = false
+  compact = false,
+  addedAt
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -44,6 +46,21 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
     tool: '🛠️',
     app: '📱',
     game: '🎮'
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
+    return `${Math.floor(diffInSeconds / 31536000)}y ago`;
   };
 
   return (
@@ -147,6 +164,11 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
                     ⬇️ {unlocks > 999 ? `${(unlocks/1000).toFixed(1)}k` : unlocks}
                   </span>
                 </div>
+                {addedAt && (
+                  <span className="flex items-center gap-1">
+                    🕒 {formatTimeAgo(addedAt)}
+                  </span>
+                )}
               </div>
             </div>
 

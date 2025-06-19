@@ -15,6 +15,7 @@ interface UnlockCardProps {
   rating?: number;
   offerSlug: string;
   type?: 'tool' | 'app' | 'game';
+  addedAt?: string;
 }
 
 export default function UnlockCard({
@@ -29,7 +30,8 @@ export default function UnlockCard({
   featured = false,
   rating = 4.5,
   offerSlug,
-  type
+  type,
+  addedAt
 }: UnlockCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -39,6 +41,21 @@ export default function UnlockCard({
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
+    return `${Math.floor(diffInSeconds / 31536000)}y ago`;
   };
 
   const renderStars = (rating: number) => {
@@ -118,6 +135,13 @@ export default function UnlockCard({
         </div>
       )}
 
+      {/* Published Time Badge */}
+      {addedAt && (
+        <div className="absolute top-12 right-3 z-10 bg-gradient-to-r from-gray-600/80 to-gray-700/80 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full border border-gray-500/30">
+          🕒 {formatTimeAgo(addedAt)}
+        </div>
+      )}
+
       {/* Image Container */}
       <div className="relative h-48 overflow-hidden flex-shrink-0">
           {!imageLoaded && !imageError && (
@@ -191,9 +215,17 @@ export default function UnlockCard({
                 <span>{formatNumber(unlocks)}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {renderStars(rating).slice(0, 3)}
-              <span className="text-xs text-gray-400 ml-1">{rating}</span>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1">
+                {renderStars(rating).slice(0, 3)}
+                <span className="text-xs text-gray-400 ml-1">{rating}</span>
+              </div>
+              {addedAt && (
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <span>🕒</span>
+                  <span>{formatTimeAgo(addedAt)}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

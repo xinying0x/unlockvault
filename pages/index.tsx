@@ -8,7 +8,7 @@ import CountdownTimer from '../components/CountdownTimer';
 import LazyImage from '../components/LazyImage';
 import SecurityIndicators from '../components/SecurityIndicators';
 import Image from 'next/image';
-import { initGA, trackPageView, trackTrafficSource, trackHumanActivity } from '../lib/analytics';
+import { initGA, trackPageView, trackTrafficSource } from '../lib/analytics';
 import { advancedBotDetection } from '../lib/botProtection';
 
 interface Offer {
@@ -116,9 +116,6 @@ const HomePage: React.FC = () => {
     initGA();
     trackPageView(window.location.href, 'UnlockVault - Premium Tools & Apps');
     trackTrafficSource();
-    
-    // Initialize Human Activity Tracking
-    trackHumanActivity();
     
     // Advanced Bot Detection
     advancedBotDetection().then(result => {
@@ -384,6 +381,7 @@ const HomePage: React.FC = () => {
                       views={offer.views}
                       unlocks={offer.unlocks}
                       featured={true}
+                      addedAt={offer.addedAt}
                     />
                   </div>
                 ))}
@@ -420,8 +418,6 @@ const HomePage: React.FC = () => {
             />
           </div>
         </section>
-
-
 
         {/* Features Section */}
         <section className="py-20 px-4 relative z-10">

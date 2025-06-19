@@ -15,12 +15,14 @@
   "dependencies": {
     "@heroicons/react": "latest",
     "@sentry/nextjs": "^9.30.0",
+    "@tailwindcss/postcss": "^4.1.10",
     "@types/bcryptjs": "^2.4.6",
     "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.9",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.0",
     "cookie": "^1.0.2",
+    "critters": "^0.0.25",
     "dotenv": "^16.5.0",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.2.0",
@@ -37,17 +39,17 @@
     "react-chartjs-2": "^5.3.0",
     "react-dom": "latest",
     "react-i18next": "^15.5.3",
-    "tailwindcss": "latest",
+    "tailwindcss": "3.3.0",
     "ua-parser-js": "^1.0.38"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
-    "autoprefixer": "latest",
+    "autoprefixer": "10.4.14",
     "eslint": "latest",
     "eslint-config-next": "latest",
-    "postcss": "latest",
+    "postcss": "8.4.14",
     "typescript": "latest"
   }
 }

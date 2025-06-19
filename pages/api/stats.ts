@@ -44,6 +44,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const testimonialsCollection = db.collection('testimonials')
     const totalTestimonials = await testimonialsCollection.countDocuments({ status: 'active' })
 
+    // Get recent offers (last 10 offers)
+    const recentOffers = await offersCollection
+      .find({ status: 'active' })
+      .sort({ addedAt: -1 })
+      .limit(10)
+      .project({ _id: 0, id: 1, title: 1, views: 1, unlocks: 1, addedAt: 1 })
+      .toArray()
+
     const stats = {
       totalOffers,
       totalViews: totalViews[0]?.total || 0,
@@ -51,7 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalVisits,
       todayVisits,
       totalTestimonials,
-      uniqueVisitors: uniqueIPs.length
+      uniqueVisitors: uniqueIPs.length,
+      recentTools: recentOffers
     }
 
     // Cache the results for 2 minutes
@@ -70,7 +79,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalVisits: 1250000,
       todayVisits: 2450,
       totalTestimonials: 48,
-      uniqueVisitors: 87500
+      uniqueVisitors: 87500,
+      recentTools: [
+        {
+          id: 'dummy-1',
+          title: 'Adobe Photoshop 2024',
+          views: 1520,
+          unlocks: 832,
+          addedAt: new Date().toISOString()
+        },
+        {
+          id: 'dummy-2',
+          title: 'Microsoft Office 365',
+          views: 2150,
+          unlocks: 1043,
+          addedAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+        }
+      ]
     };
 
     res.status(200).json(dummyStats)

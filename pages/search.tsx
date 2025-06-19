@@ -376,6 +376,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
                         unlocks={offer.unlocks}
                         featured={offer.featured}
                         compact={true}
+                        addedAt={offer.addedAt}
                       />
                     </div>
                   ))}

@@ -138,6 +138,7 @@ export const trackError = (error: string, page: string) => {
 };
 
 // Track human activity patterns
+/*
 export const trackHumanActivity = () => {
   if (typeof window !== 'undefined' && window.gtag) {
     let mouseMovements = 0;
@@ -195,3 +196,4 @@ export const trackHumanActivity = () => {
     }, 30000);
   }
 }; 
+*/ 

@@ -245,6 +245,34 @@ const ManagePage: React.FC = () => {
     }
   };
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      }),
+      time: date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+    };
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
+    return `${Math.floor(diffInSeconds / 31536000)}y ago`;
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] flex items-center justify-center">
@@ -363,6 +391,7 @@ const ManagePage: React.FC = () => {
                   <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-purple-300 hidden md:table-cell">Status</th>
                   <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-purple-300 hidden md:table-cell">Stats</th>
                   <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-purple-300 hidden sm:table-cell">Date Added</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-purple-300 hidden lg:table-cell">Last Modified</th>
                   <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-purple-300">Actions</th>
                 </tr>
               </thead>
@@ -393,7 +422,18 @@ const ManagePage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-400 hidden sm:table-cell">
-                      {new Date(offer.addedAt).toLocaleDateString()}
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium">{formatDateTime(offer.addedAt).date}</span>
+                        <span className="text-xs text-gray-500">{formatDateTime(offer.addedAt).time}</span>
+                        <span className="text-xs text-blue-400">{getTimeAgo(offer.addedAt)}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-400 hidden lg:table-cell">
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium">{formatDateTime(offer.lastModified).date}</span>
+                        <span className="text-xs text-gray-500">{formatDateTime(offer.lastModified).time}</span>
+                        <span className="text-xs text-green-400">{getTimeAgo(offer.lastModified)}</span>
+                      </div>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
                       <div className="flex justify-center gap-3">

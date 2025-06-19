@@ -10,12 +10,19 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 86400,
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   // Performance optimizations
   experimental: {
     scrollRestoration: true,
+    optimizeCss: true,
   },
+  
+  // Compression
+  compress: true,
+  
   async redirects() {
     return [
       {
@@ -23,8 +30,20 @@ const nextConfig = {
         destination: '/admin-xyz123',
         permanent: true,
       },
+      // SEO redirects for common misspellings
+      {
+        source: '/unlock-vault',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/premium-tools',
+        destination: '/tools',
+        permanent: true,
+      },
     ];
   },
+  
   async headers() {
     return [
       {
@@ -59,11 +78,54 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+      // Cache static assets
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache API responses
+      {
+        source: '/api/offers',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=600',
+          },
         ],
       },
     ];
   },
+  
   webpack: (config, { dev, isServer }) => {
+    // Optimize bundle size
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+        },
+      };
+    }
+    
     return config;
   }
 };
