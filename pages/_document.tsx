@@ -126,6 +126,14 @@ export default function Document() {
           }}
         />
         
+        {/* Adsterra Advertisement Script */}
+        <script
+          type='text/javascript'
+          src='//pl26969556.profitableratecpm.com/37/1d/25/371d25654ccae832cb32f47b040d26ff.js'
+          async
+          onError={() => console.warn('Adsterra script blocked or failed to load')}
+        />
+        
         {/* Preload Critical Resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -134,6 +142,7 @@ export default function Document() {
         <link rel="preconnect" href="https://static.hotjar.com" />
         <link rel="preconnect" href="https://insights.hotjar.com" />
         <link rel="preconnect" href="https://www.clarity.ms" />
+        <link rel="preconnect" href="//pl26969556.profitableratecpm.com" />
         
         {/* Dynamic Title Script */}
         <script
