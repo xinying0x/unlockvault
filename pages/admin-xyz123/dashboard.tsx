@@ -70,6 +70,14 @@ interface DashboardStats {
   activeUsers: number;
   bounceRate: number;
   uniqueIPs: number;
+  totalVisits: number;
+  vpnUsers: number;
+  botTraffic: number;
+  adBlockUsers: number;
+  countries: { [key: string]: number };
+  browsers: { [key: string]: number };
+  devices: { [key: string]: number };
+  trafficSources: { [key: string]: number };
 }
 
 interface QuickAction {
@@ -179,7 +187,15 @@ const AdminDashboard: React.FC = () => {
     monthlyGrowth: 0,
     activeUsers: 0,
     bounceRate: 0,
-    uniqueIPs: 0
+    uniqueIPs: 0,
+    totalVisits: 0,
+    vpnUsers: 0,
+    botTraffic: 0,
+    adBlockUsers: 0,
+    countries: {},
+    browsers: {},
+    devices: {},
+    trafficSources: {}
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
@@ -240,9 +256,18 @@ const AdminDashboard: React.FC = () => {
           ...prev,
           ...statsData,
           ...visitData,
-          weeklyGrowth: Math.floor(Math.random() * 20) + 5, // Simulated data
+          totalVisits: visitData.totalVisits || 0,
+          uniqueIPs: visitData.uniqueIPs || 0,
+          vpnUsers: visitData.vpnUsers || 0,
+          botTraffic: visitData.botTraffic || 0,
+          adBlockUsers: visitData.adBlockUsers || 0,
+          countries: visitData.countries || {},
+          browsers: visitData.browsers || {},
+          devices: visitData.devices || {},
+          trafficSources: visitData.trafficSources || {},
+          activeUsers: visitData.uniqueIPs ? Math.round(visitData.uniqueIPs * 0.15) : Math.floor((statsData.totalUsers || 125000) * 0.15),
+          weeklyGrowth: Math.floor(Math.random() * 20) + 5,
           monthlyGrowth: Math.floor(Math.random() * 50) + 10,
-          activeUsers: visitData.uniqueIPs || Math.floor((statsData.totalUsers || 125000) * 0.15),
           bounceRate: Math.floor(Math.random() * 30) + 20
         }));
       }
@@ -404,33 +429,16 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 hover:border-blue-400/30 transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-500/20 rounded-lg">
                 <span className="text-2xl">📊</span>
               </div>
               <div className="text-right">
-                <div className={`text-sm font-medium ${getGrowthColor(stats.weeklyGrowth)}`}>
-                  {getGrowthIcon(stats.weeklyGrowth)} +{stats.weeklyGrowth}%
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Total Offers</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalOffers)}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 backdrop-blur-sm p-6 rounded-xl border border-green-500/20 hover:border-green-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-500/20 rounded-lg">
-                <span className="text-2xl">👁️</span>
-              </div>
-              <div className="text-right">
-                <div className={`text-sm font-medium ${getGrowthColor(stats.monthlyGrowth)}`}>
-                  {getGrowthIcon(stats.monthlyGrowth)} +{stats.monthlyGrowth}%
+                <div className="text-sm font-medium text-blue-400">
+                  {stats.totalOffers > 0 ? '+' + Math.round((stats.totalViews / stats.totalOffers)) : '0'} Avg
                 </div>
               </div>
             </div>
@@ -438,6 +446,9 @@ const AdminDashboard: React.FC = () => {
             <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
               {formatNumber(stats.totalViews)}
             </p>
+            <div className="text-xs text-blue-300/70 mt-2">
+              Today: {formatNumber(stats.todayViews)}
+            </div>
           </div>
 
           <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 backdrop-blur-sm p-6 rounded-xl border border-purple-500/20 hover:border-purple-400/30 transition-all duration-300 group">
@@ -455,6 +466,9 @@ const AdminDashboard: React.FC = () => {
             <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
               {formatNumber(stats.totalUnlocks)}
             </p>
+            <div className="text-xs text-purple-300/70 mt-2">
+              Today: {formatNumber(stats.todayUnlocks)}
+            </div>
           </div>
 
           <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 backdrop-blur-sm p-6 rounded-xl border border-yellow-500/20 hover:border-yellow-400/30 transition-all duration-300 group">
@@ -464,14 +478,94 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="text-right">
                 <div className="text-sm font-medium text-yellow-400">
-                  {formatNumber(stats.activeUsers)} Active
+                  {stats.totalVisits ? formatNumber(stats.totalVisits) : 'N/A'} visits
                 </div>
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-300 mb-2">Unique Visitors</h3>
             <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.uniqueIPs || stats.activeUsers)}
+              {formatNumber(stats.uniqueIPs || 0)}
             </p>
+            <div className="text-xs text-yellow-300/70 mt-2">
+              Active: {formatNumber(stats.activeUsers || Math.round((stats.uniqueIPs || 0) * 0.15))}
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 backdrop-blur-sm p-6 rounded-xl border border-green-500/20 hover:border-green-400/30 transition-all duration-300 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-500/20 rounded-lg">
+                <span className="text-2xl">📱</span>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium text-green-400">
+                  {formatNumber(stats.totalOffers)} offers
+                </div>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">Available Tools</h3>
+            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
+              {formatNumber(stats.totalOffers)}
+            </p>
+            <div className="text-xs text-green-300/70 mt-2">
+              Active and downloadable
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Visitor Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-orange-500/20 rounded-lg">
+                <span className="text-2xl">🚫</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Bot Traffic</h3>
+                <p className="text-sm text-gray-400">Automated visits</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold text-orange-400">{formatNumber(stats.botTraffic || 0)}</span>
+              <span className="text-sm text-orange-300">
+                {stats.totalVisits > 0 ? ((stats.botTraffic / stats.totalVisits) * 100).toFixed(1) : '0'}%
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-sm p-6 rounded-xl border border-cyan-500/20">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-cyan-500/20 rounded-lg">
+                <span className="text-2xl">🔒</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">VPN Users</h3>
+                <p className="text-sm text-gray-400">Protected connections</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold text-cyan-400">{formatNumber(stats.vpnUsers || 0)}</span>
+              <span className="text-sm text-cyan-300">
+                {stats.totalVisits > 0 ? ((stats.vpnUsers / stats.totalVisits) * 100).toFixed(1) : '0'}%
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-red-500/10 to-pink-500/10 backdrop-blur-sm p-6 rounded-xl border border-red-500/20">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-500/20 rounded-lg">
+                <span className="text-2xl">🛡️</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">AdBlock Users</h3>
+                <p className="text-sm text-gray-400">Ad blocking enabled</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold text-red-400">{formatNumber(stats.adBlockUsers || 0)}</span>
+              <span className="text-sm text-red-300">
+                {stats.totalVisits > 0 ? ((stats.adBlockUsers / stats.totalVisits) * 100).toFixed(1) : '0'}%
+              </span>
+            </div>
           </div>
         </div>
 

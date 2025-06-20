@@ -51,6 +51,14 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement>(null);
 
+  // Update query from URL parameters
+  useEffect(() => {
+    const urlQuery = router.query.q as string;
+    if (urlQuery && urlQuery !== query) {
+      setQuery(urlQuery);
+    }
+  }, [router.query.q]);
+
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -328,7 +336,9 @@ const SearchPage: React.FC<SearchPageProps> = ({
                 ) : (
                   <>
                     Found <span className="text-blue-400 font-bold">{searchStats.filtered.toLocaleString()}</span> results
-                    {query && ` for "${query}"`}
+                    {query && query.trim() && (
+                      <span> for "<span className="text-white font-medium">{query}</span>"</span>
+                    )}
                     {searchStats.total !== searchStats.filtered && (
                       <span className="text-gray-500"> out of {searchStats.total.toLocaleString()}</span>
                     )}

@@ -120,20 +120,54 @@ const EditOfferPage: React.FC = () => {
 
   const renderStars = (rating: number, onRatingChange: (rating: number) => void) => {
     return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => onRatingChange(star)}
-            className={`text-2xl transition-all duration-200 hover:scale-110 ${
-              star <= rating ? 'text-yellow-400' : 'text-gray-600'
-            }`}
-          >
-            ⭐
-          </button>
-        ))}
-        <span className="ml-2 text-gray-300 text-sm">({rating}/5)</span>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => onRatingChange(star)}
+              onMouseEnter={(e) => {
+                // تأثير الاستطلاع على النجوم
+                const stars = e.currentTarget.parentElement?.querySelectorAll('button');
+                stars?.forEach((starBtn, index) => {
+                  if (index < star) {
+                    starBtn.style.transform = 'scale(1.2)';
+                    starBtn.style.filter = 'brightness(1.3)';
+                  } else {
+                    starBtn.style.transform = 'scale(1)';
+                    starBtn.style.filter = 'brightness(1)';
+                  }
+                });
+              }}
+              onMouseLeave={(e) => {
+                // إرجاع النجوم لحالتها الطبيعية
+                const stars = e.currentTarget.parentElement?.querySelectorAll('button');
+                stars?.forEach((starBtn) => {
+                  starBtn.style.transform = 'scale(1)';
+                  starBtn.style.filter = 'brightness(1)';
+                });
+              }}
+              className={`relative text-3xl transition-all duration-300 ease-in-out hover:scale-125 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50 rounded ${
+                star <= rating 
+                  ? 'text-yellow-400 drop-shadow-lg' 
+                  : 'text-gray-600 hover:text-yellow-200'
+              }`}
+              style={{
+                textShadow: star <= rating ? '0 0 10px rgba(255, 193, 7, 0.8)' : 'none',
+                filter: star <= rating ? 'drop-shadow(0 2px 4px rgba(255, 193, 7, 0.4))' : 'none'
+              }}
+            >
+              {star <= rating ? '★' : '☆'}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col items-start ml-3">
+          <span className="text-white font-semibold text-lg">({rating}/5)</span>
+          <span className="text-gray-400 text-xs">
+            {rating === 5 ? 'ممتاز' : rating >= 4 ? 'جيد جداً' : rating >= 3 ? 'جيد' : rating >= 2 ? 'متوسط' : 'ضعيف'}
+          </span>
+        </div>
       </div>
     );
   };
@@ -411,32 +445,74 @@ const EditOfferPage: React.FC = () => {
           </div>
 
           {/* Show in Dashboard */}
-          <div className="flex items-center mt-4">
-            <label htmlFor="showInDashboard" className="mr-3 text-sm font-medium text-gray-300">Show in Dashboard</label>
+          <div className="flex items-center justify-between mt-6 p-4 bg-gray-800/30 rounded-xl border border-purple-900/30">
+            <div className="flex-1">
+              <label htmlFor="showInDashboard" className="text-sm font-medium text-gray-300 block mb-1">
+                إظهار في لوحة التحكم
+              </label>
+              <p className="text-xs text-gray-500">
+                عند التفعيل، سيظهر هذا العرض في لوحة التحكم الرئيسية
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setOfferData(prev => prev ? { ...prev, showInDashboard: !offerData.showInDashboard } : null)}
-              className={`w-14 h-8 flex items-center rounded-full p-1 duration-300 ease-in-out ${offerData.showInDashboard ? 'bg-green-500' : 'bg-gray-600'}`}
+              className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                offerData.showInDashboard ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+              role="switch"
+              aria-checked={offerData.showInDashboard}
+              aria-labelledby="showInDashboard"
             >
-              <div className={`bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ease-in-out ${offerData.showInDashboard ? 'translate-x-6' : ''}`}></div>
+              <span 
+                className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  offerData.showInDashboard ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              >
+                <span 
+                  className={`absolute inset-0 flex h-full w-full items-center justify-center transition-opacity duration-200 ease-in-out ${
+                    offerData.showInDashboard ? 'opacity-0 ease-out duration-100' : 'opacity-100 ease-in duration-200'
+                  }`}
+                  aria-hidden="true"
+                >
+                  <span className="text-gray-400 text-xs">✕</span>
+                </span>
+                <span 
+                  className={`absolute inset-0 flex h-full w-full items-center justify-center transition-opacity duration-100 ease-in ${
+                    offerData.showInDashboard ? 'opacity-100 ease-in duration-200' : 'opacity-0 ease-out duration-100'
+                  }`}
+                  aria-hidden="true"
+                >
+                  <span className="text-green-500 text-xs">✓</span>
+                </span>
+              </span>
             </button>
           </div>
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-400 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#18122B] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Updating...
-              </div>
-            ) : (
-              'Update Offer'
-            )}
-          </button>
+          <div className="pt-6 border-t border-purple-900/30">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  <span className="font-semibold">جاري التحديث...</span>
+                  <span className="animate-pulse">⏳</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 relative z-10">
+                  <span className="text-xl">💾</span>
+                  <span className="font-bold">تحديث العرض</span>
+                  <span className="text-xl">✨</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-white opacity-0 group-active:opacity-10 transition-opacity duration-75"></div>
+            </button>
+          </div>
         </form>
       </div>
     </AdminLayout>

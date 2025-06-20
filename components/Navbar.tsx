@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
-            {/* Logo */}
+            {/* Logo - moved to left */}
             <Link href="/" className="flex items-center space-x-3 group focus:outline-none">
               <div className="relative flex-shrink-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-purple-500/25 transition-all duration-300 group-hover:scale-105 border border-purple-400/20">
@@ -67,7 +67,7 @@ const Navbar: React.FC = () => {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - moved to right */}
             <div className="hidden lg:flex items-center space-x-1">
               {navLinks.map((link) => (
                 <Link

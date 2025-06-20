@@ -454,9 +454,35 @@ const OfferDetailPage = () => {
                 href={getCpaLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full py-4 px-6 text-center bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
+                onClick={async () => {
+                  // Track unlock event
+                  try {
+                    await fetch('/api/track-visit', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        offerId: offer.id,
+                        action: 'unlock',
+                        timestamp: new Date().toISOString(),
+                      }),
+                    });
+                    
+                    // Update local unlock count
+                    setOffer(prev => prev ? { ...prev, unlocks: prev.unlocks + 1 } : null);
+                  } catch (error) {
+                    console.error('Failed to track unlock:', error);
+                  }
+                }}
+                className="block w-full py-4 px-6 text-center bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl relative overflow-hidden group"
               >
-                {getButtonText(offer.type)}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <span className="text-xl">🔓</span>
+                  <span>{getButtonText(offer.type)}</span>
+                  <span className="text-xl animate-pulse">✨</span>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               </a>
 
               {/* VPN Warning */}

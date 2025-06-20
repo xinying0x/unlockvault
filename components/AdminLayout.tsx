@@ -52,7 +52,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white overflow-hidden flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white overflow-hidden lg:flex">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -62,27 +62,31 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 right-0 z-50 w-64 md:w-72 bg-gradient-to-b from-gray-900 to-gray-800 border-l border-purple-500/30 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0 lg:static lg:inset-0 overflow-y-auto`}>
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-purple-500/30">
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 md:w-72 bg-gradient-to-b from-gray-900 to-gray-800 border-r border-purple-500/30 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0 lg:w-72 lg:min-w-[18rem] lg:flex-shrink-0 overflow-y-auto lg:flex lg:flex-col lg:shadow-xl`}>
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-purple-500/30 lg:flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-purple-400 text-2xl">🔓</span>
+            <span className="text-xl font-bold">Admin Panel</span>
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-gray-400 hover:text-white"
           >
             ✕
           </button>
-          <div className="flex items-center gap-2">
-            <span className="text-purple-400 text-2xl">🔓</span>
-            <span className="text-xl font-bold">Admin Panel</span>
-          </div>
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 flex-1">
           {menuItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               target={item.target}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${router.pathname.startsWith(item.href) ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-300 hover:text-white hover:bg-purple-600/20'}`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                router.pathname === item.href || (item.href !== '/admin-xyz123/dashboard' && router.pathname.startsWith(item.href))
+                  ? 'bg-purple-600 text-white shadow-lg' 
+                  : 'text-gray-300 hover:text-white hover:bg-purple-600/20'
+              }`}
               onClick={() => setSidebarOpen(false)}
             >
               <span className="text-lg">{item.icon}</span>
@@ -91,14 +95,14 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
           ))}
         </nav>
 
-        <div className="p-4 border-t border-purple-500/30 mt-4">
+        <div className="p-4 border-t border-purple-500/30 mt-auto lg:flex-shrink-0">
           <div className="flex items-center gap-3 p-3 bg-purple-600/20 rounded-xl">
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
               A
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="text-white font-medium">Administrator</div>
-              <div className="text-gray-400 text-sm truncate max-w-[150px]">{user.email}</div>
+              <div className="text-gray-400 text-sm truncate">{user.email}</div>
             </div>
           </div>
           <button
@@ -112,7 +116,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 lg:flex lg:flex-col min-h-screen lg:min-w-0">
         {/* Mobile Header */}
         <header className="flex items-center justify-between p-4 bg-gray-900/50 border-b border-purple-500/30 lg:hidden">
           <div className="flex items-center gap-2">
@@ -128,7 +132,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto lg:bg-gradient-to-br lg:from-transparent lg:to-purple-900/5">
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">{title}</h1>

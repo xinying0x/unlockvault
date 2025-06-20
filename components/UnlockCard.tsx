@@ -64,16 +64,45 @@ export default function UnlockCard({
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<span key={i} className="text-yellow-400">⭐</span>);
+      stars.push(
+        <span 
+          key={i} 
+          className="text-yellow-400 text-sm drop-shadow-sm" 
+          style={{
+            textShadow: '0 0 6px rgba(255, 193, 7, 0.6)',
+            filter: 'drop-shadow(0 1px 2px rgba(255, 193, 7, 0.4))'
+          }}
+        >
+          ★
+        </span>
+      );
     }
 
     if (hasHalfStar) {
-      stars.push(<span key="half" className="text-yellow-400">⭐</span>);
+      stars.push(
+        <span 
+          key="half" 
+          className="text-yellow-400 text-sm drop-shadow-sm relative"
+          style={{
+            textShadow: '0 0 6px rgba(255, 193, 7, 0.6)',
+            filter: 'drop-shadow(0 1px 2px rgba(255, 193, 7, 0.4))'
+          }}
+        >
+          ★
+        </span>
+      );
     }
 
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
-      stars.push(<span key={`empty-${i}`} className="text-gray-600">⭐</span>);
+      stars.push(
+        <span 
+          key={`empty-${i}`} 
+          className="text-gray-500 text-sm opacity-60"
+        >
+          ☆
+        </span>
+      );
     }
 
     return stars;

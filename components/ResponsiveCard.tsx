@@ -173,12 +173,12 @@ const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
             </div>
 
             {/* Action Button - Always at bottom */}
-            <div className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm mt-3' : 'py-3 px-6 mt-4'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
+            <button className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold ${compact ? 'py-2 px-4 text-sm mt-3' : 'py-3 px-6 mt-4'} rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}>
               <span className="flex items-center justify-center gap-2">
                 <span>{buttonText}</span>
                 <span className={compact ? 'text-sm' : 'text-lg'}>🚀</span>
               </span>
-            </div>
+            </button>
           </div>
 
           {/* Hover Effect Border */}

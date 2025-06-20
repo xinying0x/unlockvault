@@ -105,20 +105,54 @@ const NewOfferPage: React.FC = () => {
 
   const renderStars = (rating: number, onRatingChange: (rating: number) => void) => {
     return (
+      <div className="flex items-center gap-2">
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
             onClick={() => onRatingChange(star)}
-            className={`text-2xl transition-all duration-200 hover:scale-110 ${
-              star <= rating ? 'text-yellow-400' : 'text-gray-600'
+              onMouseEnter={(e) => {
+                // تأثير الاستطلاع على النجوم
+                const stars = e.currentTarget.parentElement?.querySelectorAll('button');
+                stars?.forEach((starBtn, index) => {
+                  if (index < star) {
+                    starBtn.style.transform = 'scale(1.2)';
+                    starBtn.style.filter = 'brightness(1.3)';
+                  } else {
+                    starBtn.style.transform = 'scale(1)';
+                    starBtn.style.filter = 'brightness(1)';
+                  }
+                });
+              }}
+              onMouseLeave={(e) => {
+                // إرجاع النجوم لحالتها الطبيعية
+                const stars = e.currentTarget.parentElement?.querySelectorAll('button');
+                stars?.forEach((starBtn) => {
+                  starBtn.style.transform = 'scale(1)';
+                  starBtn.style.filter = 'brightness(1)';
+                });
+              }}
+              className={`relative text-3xl transition-all duration-300 ease-in-out hover:scale-125 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50 rounded ${
+                star <= rating 
+                  ? 'text-yellow-400 drop-shadow-lg' 
+                  : 'text-gray-600 hover:text-yellow-200'
             }`}
-          >
-            ⭐
+              style={{
+                textShadow: star <= rating ? '0 0 10px rgba(255, 193, 7, 0.8)' : 'none',
+                filter: star <= rating ? 'drop-shadow(0 2px 4px rgba(255, 193, 7, 0.4))' : 'none'
+              }}
+            >
+              {star <= rating ? '★' : '☆'}
           </button>
         ))}
-        <span className="ml-2 text-gray-300 text-sm">({rating}/5)</span>
+        </div>
+        <div className="flex flex-col items-start ml-3">
+          <span className="text-white font-semibold text-lg">({rating}/5)</span>
+          <span className="text-gray-400 text-xs">
+            {rating === 5 ? 'ممتاز' : rating >= 4 ? 'جيد جداً' : rating >= 3 ? 'جيد' : rating >= 2 ? 'متوسط' : 'ضعيف'}
+          </span>
+        </div>
       </div>
     );
   };
