@@ -8,7 +8,13 @@
     "image": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=600&fit=crop&crop=center",
     "author": "Gaming Expert",
     "category": "Android Games",
-    "tags": ["gaming", "android", "mobile", "2024", "top games"],
+    "tags": [
+      "gaming",
+      "android",
+      "mobile",
+      "2024",
+      "top games"
+    ],
     "published": true,
     "views": 1250,
     "createdAt": "2024-01-15T10:00:00.000Z",
@@ -23,11 +29,18 @@
     "image": "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=800&h=600&fit=crop&crop=center",
     "author": "Productivity Guru",
     "category": "Android Apps",
-    "tags": ["productivity", "android", "apps", "efficiency", "work"],
+    "tags": [
+      "productivity",
+      "android",
+      "apps",
+      "efficiency",
+      "work"
+    ],
     "published": true,
-    "views": 890,
+    "views": 894,
     "createdAt": "2024-01-12T14:30:00.000Z",
-    "updatedAt": "2024-01-12T14:30:00.000Z"
+    "updatedAt": "2024-01-12T14:30:00.000Z",
+    "lastModified": "2025-06-24T15:53:58.905Z"
   },
   {
     "id": "3",
@@ -38,7 +51,13 @@
     "image": "https://images.unsplash.com/photo-1621839673705-6617adf9e890?w=800&h=600&fit=crop&crop=center",
     "author": "iOS Developer",
     "category": "iOS Software",
-    "tags": ["ios", "development", "swiftui", "trends", "2024"],
+    "tags": [
+      "ios",
+      "development",
+      "swiftui",
+      "trends",
+      "2024"
+    ],
     "published": true,
     "views": 675,
     "createdAt": "2024-01-10T09:15:00.000Z",
@@ -53,7 +72,13 @@
     "image": "https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=800&h=600&fit=crop&crop=center",
     "author": "Android Expert",
     "category": "How-to",
-    "tags": ["android", "performance", "optimization", "tutorial", "development"],
+    "tags": [
+      "android",
+      "performance",
+      "optimization",
+      "tutorial",
+      "development"
+    ],
     "published": true,
     "views": 1100,
     "createdAt": "2024-01-08T16:45:00.000Z",
@@ -68,10 +93,16 @@
     "image": "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&h=600&fit=crop&crop=center",
     "author": "Design Expert",
     "category": "How-to",
-    "tags": ["canva", "design", "free", "tutorial", "graphics"],
+    "tags": [
+      "canva",
+      "design",
+      "free",
+      "tutorial",
+      "graphics"
+    ],
     "published": true,
     "views": 2150,
     "createdAt": "2024-01-20T11:30:00.000Z",
     "updatedAt": "2024-01-20T11:30:00.000Z"
   }
-] 
+]

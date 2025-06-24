@@ -1,7 +1,7 @@
 const SEO = {
   titleTemplate: '%s | UnlockVault - Premium Software & Digital Tools',
   defaultTitle: 'UnlockVault - Premium Software, Games, Apps & Digital Tools',
-  description: 'Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools with UnlockVault.',
+  description: 'UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools with UnlockVault. Unlock premium content for free.',
   canonical: 'https://unlockvault.xyz',
   openGraph: {
     type: 'website',
@@ -9,21 +9,21 @@ const SEO = {
     url: 'https://unlockvault.xyz',
     siteName: 'UnlockVault',
     title: 'UnlockVault - Premium Software & Digital Tools',
-    description: 'Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools.',
+    description: 'UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free.',
     images: [
       {
-        url: 'https://unlockvault.xyz/images/og-image.jpg',
+        url: 'https://unlockvault.xyz/logo.svg',
         width: 1200,
         height: 630,
         alt: 'UnlockVault - Premium Software & Digital Tools',
-        type: 'image/jpeg',
+        type: 'image/svg+xml',
       },
       {
-        url: 'https://unlockvault.xyz/images/og-image-square.jpg',
-        width: 1080,
-        height: 1080,
+        url: 'https://unlockvault.xyz/favicon.ico',
+        width: 512,
+        height: 512,
         alt: 'UnlockVault Logo',
-        type: 'image/jpeg',
+        type: 'image/x-icon',
       }
     ],
   },
@@ -87,7 +87,7 @@ const SEO = {
     },
     {
       name: 'keywords',
-      content: 'premium software, games download, applications, digital tools, productivity software, development tools, creative software, gaming, tech tools, software solutions'
+      content: 'UnlockVault, unlock vault, premium software, games download, applications, digital tools, productivity software, development tools, creative software, gaming, tech tools, software solutions, free premium apps, cracked software, game hacks, AI tools, premium tools, unlock premium, vault software, premium games, free software, premium apps download, software vault, unlock premium content, premium digital tools, free premium tools, unlock software, vault apps, premium utilities, software unlocking, digital vault, premium resources'
     },
     {
       name: 'author',
@@ -112,6 +112,14 @@ const SEO = {
     {
       name: 'rating',
       content: 'general'
+    },
+    {
+      name: 'search-keywords',
+      content: 'unlock, vault, unlockv, unlockvault, premium, software, games, apps, tools, digital, free, download'
+    },
+    {
+      name: 'site-verification',
+      content: 'UnlockVault-Premium-Software-Games-Apps-Digital-Tools'
     }
   ],
   additionalLinkTags: [
@@ -121,20 +129,13 @@ const SEO = {
     },
     {
       rel: 'icon',
-      type: 'image/png',
-      sizes: '32x32',
-      href: '/favicon-32x32.png',
-    },
-    {
-      rel: 'icon',
-      type: 'image/png',
-      sizes: '16x16',
-      href: '/favicon-16x16.png',
+      type: 'image/svg+xml',
+      href: '/logo.svg',
     },
     {
       rel: 'apple-touch-icon',
       sizes: '180x180',
-      href: '/apple-touch-icon.png',
+      href: '/logo.svg',
     },
     {
       rel: 'manifest',
@@ -142,7 +143,7 @@ const SEO = {
     },
     {
       rel: 'mask-icon',
-      href: '/safari-pinned-tab.svg',
+      href: '/logo.svg',
       color: '#8B5CF6',
     },
     {
@@ -167,11 +168,19 @@ const SEO = {
       type: 'application/rss+xml',
       title: 'UnlockVault RSS Feed',
       href: 'https://unlockvault.xyz/rss.xml',
+    },
+    {
+      rel: 'canonical',
+      href: 'https://unlockvault.xyz',
     }
   ],
   languageAlternates: [
     {
       hrefLang: 'en',
+      href: 'https://unlockvault.xyz',
+    },
+    {
+      hrefLang: 'x-default',
       href: 'https://unlockvault.xyz',
     }
   ]

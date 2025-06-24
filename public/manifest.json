@@ -1,7 +1,7 @@
 {
   "name": "UnlockVault - Premium Software & Digital Tools",
   "short_name": "UnlockVault",
-  "description": "Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools.",
+  "description": "UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0F0B1F",
@@ -10,51 +10,19 @@
   "scope": "/",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["productivity", "utilities", "games", "developer", "business"],
-  "screenshots": [
-    {
-      "src": "/images/screenshot-wide.jpg",
-      "sizes": "1280x720",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "UnlockVault Homepage"
-    },
-    {
-      "src": "/images/screenshot-narrow.jpg",
-      "sizes": "750x1334",
-      "type": "image/jpeg",
-      "form_factor": "narrow",
-      "label": "UnlockVault Mobile View"
-    }
-  ],
+  "categories": ["productivity", "utilities", "games", "developer", "business", "entertainment", "tools"],
+  "keywords": ["UnlockVault", "unlock vault", "premium software", "games", "apps", "digital tools", "free premium", "software vault"],
   "icons": [
     {
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "/images/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/images/icon-256.png",
-      "type": "image/png",
-      "sizes": "256x256",
+      "type": "image/x-icon",
       "purpose": "any"
     },
     {
-      "src": "/images/icon-384.png",
-      "type": "image/png",
-      "sizes": "384x384",
-      "purpose": "any"
-    },
-    {
-      "src": "/images/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512",
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
       "purpose": "any maskable"
     }
   ],
@@ -63,49 +31,25 @@
       "name": "Latest Games",
       "short_name": "Games",
       "description": "Browse latest premium games",
-      "url": "/games",
-      "icons": [
-        {
-          "src": "/images/games-icon.png",
-          "sizes": "192x192"
-        }
-      ]
+      "url": "/games"
     },
     {
       "name": "Premium Apps",
       "short_name": "Apps",
       "description": "Discover premium applications",
-      "url": "/apps",
-      "icons": [
-        {
-          "src": "/images/apps-icon.png",
-          "sizes": "192x192"
-        }
-      ]
+      "url": "/apps"
     },
     {
       "name": "Professional Tools",
       "short_name": "Tools",
       "description": "Access professional development tools",
-      "url": "/tools",
-      "icons": [
-        {
-          "src": "/images/tools-icon.png",
-          "sizes": "192x192"
-        }
-      ]
+      "url": "/tools"
     },
     {
       "name": "Articles & Blog",
       "short_name": "Articles",
       "description": "Read latest tech articles and tutorials",
-      "url": "/articles",
-      "icons": [
-        {
-          "src": "/images/articles-icon.png",
-          "sizes": "192x192"
-        }
-      ]
+      "url": "/articles"
     }
   ],
   "related_applications": [],
@@ -116,5 +60,4 @@
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
   }
-} 
 } 

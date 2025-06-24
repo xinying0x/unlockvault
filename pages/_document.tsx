@@ -1,9 +1,115 @@
 import { Html, Head, Main, NextScript } from 'next/document';
 
 export default function Document() {
+  // Structured Data for better SEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://unlockvault.xyz/#organization",
+        "name": "UnlockVault",
+        "alternateName": ["Unlock Vault", "UnlockVault.xyz"],
+        "url": "https://unlockvault.xyz",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://unlockvault.xyz/logo.svg",
+          "width": 512,
+          "height": 512
+        },
+        "description": "UnlockVault - Premium software, games, apps & digital tools. Unlock premium content for free.",
+        "foundingDate": "2024",
+        "sameAs": [
+          "https://unlockvault.xyz"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer service",
+          "url": "https://unlockvault.xyz"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://unlockvault.xyz/#website",
+        "url": "https://unlockvault.xyz",
+        "name": "UnlockVault - Premium Software & Digital Tools",
+        "alternateName": ["UnlockVault", "Unlock Vault"],
+        "description": "UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free.",
+        "publisher": {
+          "@id": "https://unlockvault.xyz/#organization"
+        },
+        "inLanguage": "en-US",
+        "potentialAction": [
+          {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://unlockvault.xyz/search?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://unlockvault.xyz/#webpage",
+        "url": "https://unlockvault.xyz",
+        "name": "UnlockVault - Premium Software, Games, Apps & Digital Tools",
+        "isPartOf": {
+          "@id": "https://unlockvault.xyz/#website"
+        },
+        "about": {
+          "@id": "https://unlockvault.xyz/#organization"
+        },
+        "description": "UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free.",
+        "breadcrumb": {
+          "@id": "https://unlockvault.xyz/#breadcrumb"
+        },
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://unlockvault.xyz/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://unlockvault.xyz"
+          }
+        ]
+      }
+    ]
+  };
+
   return (
-    <Html lang="en">
+    <Html lang="en" data-critters-container>
       <Head>
+        {/* Structured Data for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData)
+          }}
+        />
+
+        {/* Additional meta tags for better search visibility */}
+        <meta name="google-site-verification" content="UnlockVault-Premium-Software-Games-Apps" />
+        <meta name="msvalidate.01" content="UnlockVault-Premium-Digital-Tools" />
+        <meta name="yandex-verification" content="UnlockVault-Software-Vault" />
+        
+        {/* Rich snippets support */}
+        <meta property="article:publisher" content="https://unlockvault.xyz" />
+        <meta property="article:author" content="UnlockVault Team" />
+        
+        {/* Additional search keywords for partial matching */}
+        <meta name="search-title" content="UnlockVault unlock vault premium software games apps tools" />
+        <meta name="alternate-names" content="unlock vault, unlockv, unlockvault, vault software, premium vault" />
+        
+        {/* Preload critical resources */}
+        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/favicon.ico" as="image" type="image/x-icon" />
+        
         {/* Dynamic Favicon */}
         <link rel="icon" type="image/svg+xml" href="/logo.svg" />
         <link rel="alternate icon" href="/favicon.ico" />

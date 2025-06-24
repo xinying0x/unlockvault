@@ -115,19 +115,19 @@ const HomePage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>UnlockVault - Premium Software, Games, Apps & Digital Tools</title>
-        <meta name="description" content="Discover and download premium software, games, applications, and digital tools for free. Your trusted source for professional software, gaming, and productivity solutions." />
-        <meta name="keywords" content="premium software, free games download, applications, digital tools, productivity software, development tools, creative software, gaming software, tech tools, software solutions" />
+        <title>UnlockVault - Premium Software, Games, Apps & Digital Tools | Unlock Vault</title>
+        <meta name="description" content="UnlockVault - Discover and download premium software, games, applications, and digital tools for free. Unlock premium content with UnlockVault. Your trusted source for professional software, gaming, and productivity solutions." />
+        <meta name="keywords" content="UnlockVault, unlock vault, unlockv, premium software, free games download, applications, digital tools, productivity software, development tools, creative software, gaming software, tech tools, software solutions, unlock premium, vault software, premium vault, unlock premium content, software vault, premium tools unlock, vault apps, unlock software free, premium unlock tools" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         <link rel="canonical" href="https://unlockvault.xyz" />
         
         {/* Open Graph */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="UnlockVault - Premium Software & Digital Tools" />
-        <meta property="og:description" content="Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools." />
+        <meta property="og:title" content="UnlockVault - Premium Software & Digital Tools | Unlock Vault" />
+        <meta property="og:description" content="UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free." />
         <meta property="og:url" content="https://unlockvault.xyz" />
         <meta property="og:site_name" content="UnlockVault" />
-        <meta property="og:image" content="https://unlockvault.xyz/images/og-image.jpg" />
+        <meta property="og:image" content="https://unlockvault.xyz/logo.svg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content="UnlockVault - Premium Software & Digital Tools" />
