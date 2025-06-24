@@ -36,27 +36,38 @@ const EditArticlePage = () => {
 
   const fetchArticle = async (articleSlug: string) => {
     try {
+      console.log('Fetching article:', articleSlug);
       const response = await fetch(`/api/articles/${articleSlug}`);
+      console.log('Fetch response status:', response.status);
+      
       if (response.ok) {
         const articleData = await response.json();
+        console.log('Article data received:', articleData);
         setArticle(articleData);
         
         // Convert HTML back to markdown for editing
-        const markdownContent = convertHtmlToMarkdown(articleData.content);
+        const markdownContent = convertHtmlToMarkdown(articleData.content || '');
         
         setFormData({
-          title: articleData.title,
-          summary: articleData.summary,
+          title: articleData.title || '',
+          summary: articleData.summary || '',
           content: markdownContent,
-          image: articleData.image,
-          author: articleData.author,
-          category: articleData.category,
-          tags: articleData.tags.join(', '),
-          published: articleData.published
+          image: articleData.image || '',
+          author: articleData.author || '',
+          category: articleData.category || 'Android Games',
+          tags: Array.isArray(articleData.tags) ? articleData.tags.join(', ') : '',
+          published: articleData.published || false
         });
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to fetch article:', response.status, errorData);
+        alert(`Failed to load article: ${response.status} - Article not found`);
+        router.push('/admin-xyz123/articles');
       }
     } catch (error) {
       console.error('Error fetching article:', error);
+      alert('Network error: Failed to load article. Please check your connection.');
+      router.push('/admin-xyz123/articles');
     } finally {
       setFetchLoading(false);
     }
@@ -173,6 +184,8 @@ const EditArticlePage = () => {
         content: convertMarkdownToHtml(formData.content)
       };
 
+      console.log('Updating article data:', articleData);
+
       const response = await fetch(`/api/articles/${slug}`, {
         method: 'PUT',
         headers: {
@@ -181,14 +194,19 @@ const EditArticlePage = () => {
         body: JSON.stringify(articleData),
       });
 
+      const responseData = await response.json();
+      console.log('API response:', responseData);
+
       if (response.ok) {
+        alert('Article updated successfully!');
         router.push('/admin-xyz123/articles');
       } else {
-        alert('Failed to update article');
+        console.error('Failed to update article:', responseData);
+        alert(`Failed to update article: ${responseData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating article:', error);
-      alert('Failed to update article');
+      alert('Network error: Failed to update article. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

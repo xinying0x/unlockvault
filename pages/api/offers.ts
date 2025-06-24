@@ -121,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Fallback to JSON file if MongoDB is not available
     try {
-      if (req.method === 'GET') {
+    if (req.method === 'GET') {
         const filePath = path.join(process.cwd(), 'data', 'offers.json');
         const fileContents = fs.readFileSync(filePath, 'utf8');
         const allOffers: Offer[] = JSON.parse(fileContents);
@@ -160,9 +160,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (limit && !isNaN(Number(limit))) {
           filteredOffers = filteredOffers.slice(0, Number(limit));
         }
-        
+
         res.status(200).json(filteredOffers);
-      } else {
+    } else {
         res.status(201).json({ 
           message: 'Offer created successfully (fallback mode)',
           id: Date.now().toString()

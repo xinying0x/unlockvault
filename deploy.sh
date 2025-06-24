@@ -92,7 +92,7 @@ deploy_vercel() {
     
     if ! command -v vercel &> /dev/null; then
         print_status "Installing Vercel CLI..."
-        npm install -g vercel
+      npm install -g vercel
     fi
     
     print_status "Starting Vercel deployment..."
@@ -258,8 +258,8 @@ main() {
             echo "  ./deploy.sh local"
             echo "  ./deploy.sh vercel"
             echo "  VPS_HOST=server.com VPS_USER=ubuntu ./deploy.sh vps"
-            ;;
-    esac
+    ;;
+esac
 }
 
 # Run main function

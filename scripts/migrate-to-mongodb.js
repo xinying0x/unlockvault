@@ -128,9 +128,9 @@ async function migrateData() {
       // Insert new data
       if (settingsData && Object.keys(settingsData).length > 0) {
         const result = await settingsCollection.insertOne({
-          ...settingsData,
+        ...settingsData,
           updatedAt: new Date().toISOString()
-        });
+      });
         console.log(`✅ Migrated settings`);
       }
     } else {
@@ -172,13 +172,13 @@ async function migrateData() {
       const count = await db.collection(collection.name).countDocuments();
       console.log(`   ${collection.name}: ${count} documents`);
     }
-
+    
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
   } finally {
     if (client) {
-      await client.close();
+    await client.close();
       console.log('\n🔌 MongoDB connection closed');
     }
   }
@@ -187,5 +187,5 @@ async function migrateData() {
 // Run migration
 if (require.main === module) {
   console.log('🚀 Starting data migration from JSON to MongoDB...');
-  migrateData();
+migrateData(); 
 } 

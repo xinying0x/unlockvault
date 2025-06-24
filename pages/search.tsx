@@ -304,14 +304,14 @@ const SearchPage: React.FC<SearchPageProps> = ({
 
   return (
     <>
-      <SEOHead 
+      <SEOHead
         title={query ? `Search Results for "${query}" - UnlockVault` : "Search - UnlockVault"}
         description={query ? `Find the best results for "${query}" on UnlockVault` : "Search through our collection of premium software, games, and articles"}
         url="https://unlockvault.xyz/search"
       />
       
       <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E]">
-        {/* Header */}
+            {/* Header */}
         <div className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="text-center">
@@ -323,16 +323,16 @@ const SearchPage: React.FC<SearchPageProps> = ({
               </p>
             </div>
           </div>
-        </div>
+            </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Search Bar */}
+            {/* Search Bar */}
           <div className="mb-8">
             <div className="relative max-w-2xl mx-auto">
-              <input
-                type="text"
-                value={query}
-                onChange={handleSearchChange}
+                <input
+                  type="text"
+                  value={query}
+                  onChange={handleSearchChange}
                 placeholder="Search for software, games, or articles..."
                 className="w-full px-4 py-3 pl-12 pr-4 text-lg border border-gray-600 rounded-lg bg-gray-800/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
               />
@@ -341,10 +341,10 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
+              </div>
             </div>
-          </div>
 
-          {/* Filters */}
+            {/* Filters */}
           <div className="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
             <div className="flex flex-wrap items-center gap-4">
               {/* Content Type Filter */}
@@ -362,51 +362,51 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   ))}
                 </select>
               </div>
-
-              {/* Category Filter */}
+                
+                {/* Category Filter */}
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium text-gray-300">Category:</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
                   className="px-3 py-2 border border-gray-600 rounded-md text-sm bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Sort Filter */}
+                {/* Sort Filter */}
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium text-gray-300">Sort:</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleFilterChange('sort', e.target.value)}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleFilterChange('sort', e.target.value)}
                   className="px-3 py-2 border border-gray-600 rounded-md text-sm bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   {filterOptions.sorts.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.icon} {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Clear Filters */}
-              {(query || selectedCategory !== 'all' || selectedType !== 'all' || sortBy !== 'relevance') && (
-                <button
-                  onClick={clearFilters}
+                {/* Clear Filters */}
+                {(query || selectedCategory !== 'all' || selectedType !== 'all' || sortBy !== 'relevance') && (
+                  <button
+                    onClick={clearFilters}
                   className="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-md transition-colors"
-                >
+                  >
                   Clear All
-                </button>
-              )}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Search Stats */}
+            {/* Search Stats */}
           <div className="mb-6 text-sm text-gray-400">
             {query && (
               <p>
@@ -430,7 +430,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
               {results.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {results.map((result, index) => renderSearchResult(result, index))}
-                </div>
+          </div>
               ) : (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🔍</div>
@@ -439,14 +439,14 @@ const SearchPage: React.FC<SearchPageProps> = ({
                     {query ? `No results found for "${query}". Try different keywords or filters.` : 'Enter a search term to get started.'}
                   </p>
                   {query && (
-                    <button
-                      onClick={clearFilters}
+                <button
+                  onClick={clearFilters}
                       className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300"
-                    >
+                >
                       Clear Search
-                    </button>
+                </button>
                   )}
-                </div>
+              </div>
               )}
 
               {/* Load More Trigger */}
@@ -462,11 +462,11 @@ const SearchPage: React.FC<SearchPageProps> = ({
                       Load More Results
                     </button>
                   )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
       </div>
     </>
   );

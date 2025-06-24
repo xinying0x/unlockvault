@@ -22,11 +22,22 @@ const AdminArticlesPage = () => {
 
   const fetchArticles = async () => {
     try {
-      const response = await fetch('/api/articles?published=false');
+      // Fetch all articles (both published and unpublished) for admin
+      const response = await fetch('/api/articles?published=all');
       const data = await response.json();
-      setArticles(data);
+      
+      // Handle both array response and paginated response
+      if (Array.isArray(data)) {
+        setArticles(data);
+      } else if (data.articles && Array.isArray(data.articles)) {
+        setArticles(data.articles);
+      } else {
+        console.error('Unexpected API response format:', data);
+        setArticles([]);
+      }
     } catch (error) {
       console.error('Error fetching articles:', error);
+      setArticles([]);
     } finally {
       setLoading(false);
     }
@@ -64,11 +75,20 @@ const AdminArticlesPage = () => {
       });
 
       if (response.ok) {
-        const updatedArticle = await response.json();
-        setArticles(articles.map(a => a.id === article.id ? updatedArticle : a));
+        // Update the article in the local state
+        setArticles(articles.map(a => 
+          a.slug === article.slug 
+            ? { ...a, published: !a.published, lastModified: new Date().toISOString() }
+            : a
+        ));
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to update article:', errorData);
+        alert('Failed to update article status');
       }
     } catch (error) {
       console.error('Error updating article:', error);
+      alert('Failed to update article status');
     }
   };
 

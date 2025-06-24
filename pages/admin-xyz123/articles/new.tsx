@@ -118,6 +118,8 @@ const NewArticlePage = () => {
         content: convertMarkdownToHtml(formData.content)
       };
 
+      console.log('Submitting article data:', articleData);
+
       const response = await fetch('/api/articles', {
         method: 'POST',
         headers: {
@@ -126,14 +128,19 @@ const NewArticlePage = () => {
         body: JSON.stringify(articleData),
       });
 
+      const responseData = await response.json();
+      console.log('API response:', responseData);
+
       if (response.ok) {
+        alert('Article created successfully!');
         router.push('/admin-xyz123/articles');
       } else {
-        alert('Failed to create article');
+        console.error('Failed to create article:', responseData);
+        alert(`Failed to create article: ${responseData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error creating article:', error);
-      alert('Failed to create article');
+      alert('Network error: Failed to create article. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
