@@ -315,6 +315,14 @@ const AdminDashboard: React.FC = () => {
       badge: `${stats.totalOffers} Items`
     },
     {
+      title: 'Articles & Blog',
+      description: 'Manage blog articles and content',
+      icon: '📄',
+      href: '/admin-xyz123/articles',
+      color: 'from-indigo-500 to-purple-600',
+      badge: 'Blog'
+    },
+    {
       title: 'Analytics',
       description: 'View detailed analytics and reports',
       icon: '📊',

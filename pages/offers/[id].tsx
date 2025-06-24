@@ -269,12 +269,6 @@ const OfferDetailPage = () => {
           <div className="text-6xl mb-4">❌</div>
           <div className="text-2xl font-bold mb-2">Error</div>
           <p className="text-gray-400">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Go Back
-          </button>
         </div>
       </div>
     );
@@ -300,10 +294,10 @@ const OfferDetailPage = () => {
 
   const getButtonText = (type: string) => {
     switch (type) {
-      case 'game': return 'Get Hack';
-      case 'app': return 'Download App 📱';
-      case 'tool': return 'Unlock Tool 🛠️';
-      default: return 'Unlock Now 🔓';
+      case 'game': return 'Get Game';
+      case 'app': return 'Get App';
+      case 'tool': return 'Get Tool';
+      default: return 'Get Offer';
     }
   };
 
@@ -322,26 +316,7 @@ const OfferDetailPage = () => {
       
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Navigation Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white rounded-lg transition-all duration-300 border border-gray-600/30 hover:border-gray-500/50 hover:scale-105"
-          >
-            <svg 
-              className="w-5 h-5" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-              />
-            </svg>
-            Back
-          </button>
+        <div className="mb-6 flex items-center justify-end">
           
                      {/* Breadcrumb */}
            <nav className="hidden md:flex items-center gap-2 text-sm text-gray-400">
@@ -361,12 +336,12 @@ const OfferDetailPage = () => {
         </div>
         
         <div className="bg-[#232046]/80 rounded-2xl shadow-2xl p-8 border border-purple-900/30">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+            <div>
               <img
                 src={offer.image}
                 alt={offer.title}
-                className="w-full max-w-sm mx-auto rounded-xl shadow-lg border border-purple-900 cursor-pointer transition-transform duration-300 hover:scale-105"
+                className="w-full max-w-sm mx-auto rounded-xl shadow-lg border border-purple-900 cursor-pointer transition-transform duration-300 hover:scale-105 mb-4"
                 onClick={() => {
                   if (offer.gallery && Array.isArray(offer.gallery) && offer.gallery.length > 0) {
                     setGalleryIndex(0);
@@ -443,12 +418,6 @@ const OfferDetailPage = () => {
                 </span>
               )}
 
-              {/* Timer */}
-              <div className="mb-6 text-center">
-                <div className="text-sm text-gray-400 mb-2">Time Remaining</div>
-                <div className="text-2xl font-bold text-purple-400">{formatTime(timer)}</div>
-              </div>
-
               {/* Unlock Button */}
               <a
                 href={getCpaLink()}
@@ -491,50 +460,6 @@ const OfferDetailPage = () => {
                   VPN/Proxy detected. Some offers may not be available.
                 </div>
               )}
-            </div>
-          </div>
-          
-          {/* Bottom Navigation */}
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-lg transition-all duration-300 border border-purple-500/30 hover:border-purple-400/50"
-            >
-              <svg 
-                className="w-5 h-5" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-                />
-              </svg>
-                             Go Back
-            </button>
-            
-            <div className="flex gap-3">
-                             <Link 
-                 href="/" 
-                 className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-300 text-sm"
-               >
-                 🏠 Home
-               </Link>
-               <Link 
-                 href="/search" 
-                 className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-300 text-sm"
-               >
-                 🔍 Search
-               </Link>
-               <Link 
-                 href={`/${offer?.type === 'tool' ? 'tools' : offer?.type === 'app' ? 'apps' : 'games'}`}
-                 className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-300 text-sm"
-               >
-                 {offer?.type === 'tool' ? '🛠️ Tools' : offer?.type === 'app' ? '📱 Apps' : '🎮 Games'}
-               </Link>
             </div>
           </div>
 
@@ -649,25 +574,7 @@ const OfferDetailPage = () => {
       </div>
       
       {/* Floating Back Button */}
-      <button
-        onClick={() => router.back()}
-        className="fixed bottom-6 left-6 z-40 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center"
-        title="Go Back"
-      >
-        <svg 
-          className="w-6 h-6" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-          />
-        </svg>
-      </button>
+      
     </div>
   );
 };

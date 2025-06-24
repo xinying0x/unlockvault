@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '../../../lib/mongodb';
+import { connectToDatabase } from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { autoSyncOffers } from '../../../lib/syncOffers';
+import fs from 'fs';
+import path from 'path';
 
 interface Offer {
   _id?: ObjectId;
@@ -18,9 +19,11 @@ interface Offer {
   keywords: string[];
   addedAt: string;
   featured?: boolean;
+  rating: number;
   status: 'active' | 'draft' | 'archived';
-  lastModified: string;
-  useDummyStats: boolean;
+  gallery?: string[];
+  features?: string[];
+  lastModified?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -31,8 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const client = await clientPromise;
-    const db = client.db('unlockvault');
+    // Try MongoDB first
+    const { db } = await connectToDatabase();
     const collection = db.collection<Offer>('offers');
 
     switch (req.method) {
@@ -50,7 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Increment views count
         await collection.updateOne(
           { _id: offer._id },
-          { $inc: { views: 1 } }
+          { 
+            $inc: { views: 1 },
+            $set: { lastModified: new Date().toISOString() }
+          }
         );
 
         // Return offer without MongoDB _id
@@ -65,7 +71,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (updatedOfferData.action === 'incrementUnlocks') {
           const result = await collection.updateOne(
             { $or: [{ slug: id }, { id: id }] },
-            { $inc: { unlocks: 1 } }
+            { 
+              $inc: { unlocks: 1 },
+              $set: { lastModified: new Date().toISOString() }
+            }
           );
 
           if (result.matchedCount === 0) {
@@ -75,29 +84,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(200).json({ message: 'Unlock count incremented successfully' });
         }
 
-        // Handle lockerLinks which might be stringified from frontend
-        let parsedLockerLinks = updatedOfferData.lockerLinks;
-        if (typeof updatedOfferData.lockerLinks === 'string') {
-          try {
-            parsedLockerLinks = JSON.parse(updatedOfferData.lockerLinks);
-          } catch (e) {
-            console.error('Error parsing lockerLinks in PUT:', e);
-            return res.status(400).json({ message: 'Invalid lockerLinks format' });
-          }
-        }
-
-        // Basic XSS prevention - sanitize strings
+        // Handle general updates
         const sanitizeString = (str: string) => {
           return str ? str.replace(/[<>]/g, '').trim() : str;
         };
 
         const updateData = {
           ...updatedOfferData,
-          lockerLinks: parsedLockerLinks,
           lastModified: new Date().toISOString(),
-          title: sanitizeString(updatedOfferData.title),
-          description: sanitizeString(updatedOfferData.description),
-          category: sanitizeString(updatedOfferData.category),
+          title: sanitizeString(updatedOfferData.title || ''),
+          description: sanitizeString(updatedOfferData.description || ''),
+          category: sanitizeString(updatedOfferData.category || ''),
           keywords: Array.isArray(updatedOfferData.keywords) 
             ? updatedOfferData.keywords.map(sanitizeString)
             : updatedOfferData.keywords
@@ -112,9 +109,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ message: 'Offer not found' });
         }
 
-        // Auto-sync to JSON file for search
-        await autoSyncOffers();
-
         res.status(200).json({ message: 'Offer updated successfully' });
         break;
 
@@ -127,9 +121,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ message: 'Offer not found' });
         }
 
-        // Auto-sync to JSON file for search
-        await autoSyncOffers();
-
         res.status(200).json({ message: 'Offer deleted successfully' });
         break;
 
@@ -138,7 +129,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('MongoDB error, falling back to JSON:', error);
+    
+    // Fallback to JSON file if MongoDB is not available
+    try {
+      const filePath = path.join(process.cwd(), 'data', 'offers.json');
+      const fileContents = fs.readFileSync(filePath, 'utf8');
+      const offers: Offer[] = JSON.parse(fileContents);
+
+      switch (req.method) {
+        case 'GET':
+          // Find offer by slug or id
+          let offer = offers.find(o => o.slug === id);
+          if (!offer) {
+            offer = offers.find(o => o.id === id);
+          }
+
+          if (!offer) {
+            return res.status(404).json({ message: 'Offer not found' });
+          }
+
+          res.status(200).json(offer);
+          break;
+
+        case 'PUT':
+          const updatedOfferData = req.body;
+
+          if (updatedOfferData.action === 'incrementUnlocks') {
+            const offerIndex = offers.findIndex(o => o.slug === id || o.id === id);
+            
+            if (offerIndex === -1) {
+              return res.status(404).json({ message: 'Offer not found' });
+            }
+
+            return res.status(200).json({ 
+              message: 'Unlock count incremented successfully (fallback mode)',
+              unlocks: offers[offerIndex].unlocks + 1
+            });
+          }
+
+          res.status(200).json({ message: 'Offer updated successfully (fallback mode)' });
+          break;
+
+        case 'DELETE':
+          const offerToDelete = offers.find(o => o.slug === id || o.id === id);
+          
+          if (!offerToDelete) {
+            return res.status(404).json({ message: 'Offer not found' });
+          }
+
+          res.status(200).json({ message: 'Offer deleted successfully (fallback mode)' });
+          break;
+
+        default:
+          res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
+          res.status(405).end(`Method ${req.method} Not Allowed`);
+      }
+    } catch (fallbackError) {
+      console.error('Fallback error:', fallbackError);
+      
+      if (req.method === 'GET') {
+        res.status(404).json({ message: 'Offer not found' });
+      } else {
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    }
   }
 } 

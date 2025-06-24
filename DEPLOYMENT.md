@@ -1,172 +1,315 @@
 # 🚀 UnlockVault Deployment Guide
 
-## Bitbucket Integration ✅
+This guide covers deploying UnlockVault with MongoDB database support.
 
-Your project is already connected to Bitbucket:
-- **Repository**: `https://bitbucket.org/unlockvault/unlockvault.git`
-- **Branch**: `main`
-- **Pipelines**: Configured for automatic CI/CD
+## 📋 Prerequisites
 
-## Quick Deployment Options
+- Node.js 18+ 
+- MongoDB 6.0+ (local or cloud)
+- Git access to repository
+- Deployment platform account (Vercel, Railway, VPS, etc.)
 
-### 1. 🔥 Vercel (Recommended for Next.js)
+## 🗄️ Database Setup
+
+### Local MongoDB
+```bash
+# Install MongoDB locally
+# Windows: Download from https://www.mongodb.com/try/download/community
+# macOS: brew install mongodb-community
+# Ubuntu: sudo apt install mongodb
+
+# Start MongoDB service
+mongod --dbpath /path/to/data/directory
+```
+
+### MongoDB Atlas (Cloud)
+1. Create account at https://www.mongodb.com/atlas
+2. Create new cluster
+3. Get connection string
+4. Add to environment variables
+
+## 🔧 Environment Variables
+
+Create `.env.local` file with:
+
+```env
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017/unlockvault
+# OR for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/unlockvault?retryWrites=true&w=majority
+MONGODB_DB=unlockvault
+
+# JWT Secret for authentication
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# NextAuth Configuration
+NEXTAUTH_URL=https://yourdomain.com
+NEXTAUTH_SECRET=your-nextauth-secret-key
+
+# Admin Configuration
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+
+# API Keys (optional)
+ANALYTICS_ID=your-analytics-id
+```
+
+## 📦 Installation & Setup
+
+```bash
+# Clone repository
+git clone https://bitbucket.org/yourrepo/unlockvault.git
+cd unlockvault
+
+# Install dependencies
+npm install
+
+# Setup database with sample data
+npm run migrate
+
+# Build application
+npm run build
+
+# Start application
+npm start
+```
+
+## 🔄 Database Migration
+
+To migrate data from JSON files to MongoDB:
+
+```bash
+# Run migration script
+npm run migrate
+
+# Or manually
+node scripts/migrate-to-mongodb.js
+```
+
+This will:
+- Connect to MongoDB
+- Clear existing collections
+- Import data from JSON files
+- Create proper indexes
+- Display migration summary
+
+## 🌐 Deployment Options
+
+### 1. Vercel (Recommended)
+
 ```bash
 # Install Vercel CLI
 npm install -g vercel
 
-# Deploy to production
+# Login to Vercel
+vercel login
+
+# Deploy
 vercel --prod
 
-# Or use the deployment script
-chmod +x deploy.sh
-./deploy.sh vercel
+# Set environment variables in Vercel dashboard
+# Add MONGODB_URI and other required variables
 ```
 
-### 2. 🌐 Netlify
+### 2. Railway
+
 ```bash
-# Install Netlify CLI
-npm install -g netlify-cli
+# Install Railway CLI
+npm install -g @railway/cli
 
-# Deploy to production
-netlify deploy --prod --dir=.next
+# Login
+railway login
 
-# Or use the deployment script
-./deploy.sh netlify
+# Deploy
+railway up
+
+# Set environment variables in Railway dashboard
 ```
 
-### 3. 🖥️ VPS/Server Deployment
+### 3. VPS/Server Deployment
+
 ```bash
-# Build the project
+# Upload files to server
+rsync -avz --delete ./ user@server:/var/www/unlockvault/
+
+# SSH into server
+ssh user@server
+
+# Navigate to project
+cd /var/www/unlockvault
+
+# Install dependencies
+npm install --production
+
+# Setup database
+npm run migrate
+
+# Start with PM2
+npm install -g pm2
+pm2 start npm --name "unlockvault" -- start
+pm2 save
+pm2 startup
+```
+
+### 4. Docker Deployment
+
+```dockerfile
+# Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/unlockvault
+      - MONGODB_DB=unlockvault
+    depends_on:
+      - mongo
+    volumes:
+      - ./data:/app/data
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=unlockvault
+
+volumes:
+  mongo_data:
+```
+
+## 🔄 Bitbucket Pipelines
+
+The project includes automated deployment via Bitbucket Pipelines:
+
+### Automatic Deployment
+- Push to `main` branch triggers production build
+- Includes MongoDB setup and data migration
+- Configurable for multiple deployment targets
+
+### Manual Pipelines
+```bash
+# Setup database only
+bitbucket-pipelines run setup-database
+
+# Migrate data only  
+bitbucket-pipelines run migrate-data
+```
+
+### Pipeline Configuration
+Update `bitbucket-pipelines.yml` with your deployment settings:
+
+1. **Vercel**: Uncomment Vercel section, add `VERCEL_TOKEN`
+2. **VPS**: Uncomment VPS section, add SSH keys and server details
+3. **Railway**: Uncomment Railway section, add `RAILWAY_TOKEN`
+
+## 🔒 Security Checklist
+
+- [ ] Change default admin credentials
+- [ ] Use strong JWT secrets
+- [ ] Enable MongoDB authentication
+- [ ] Use HTTPS in production
+- [ ] Set proper CORS origins
+- [ ] Configure rate limiting
+- [ ] Enable MongoDB connection encryption
+
+## 📊 Monitoring & Maintenance
+
+### Database Backups
+```bash
+# MongoDB backup
+mongodump --uri="your-mongodb-uri" --out=backup/
+
+# Restore backup
+mongorestore --uri="your-mongodb-uri" backup/
+```
+
+### Performance Monitoring
+- Monitor MongoDB performance
+- Check API response times
+- Monitor server resources
+- Set up error tracking (Sentry)
+
+### Regular Updates
+```bash
+# Update dependencies
+npm update
+
+# Re-run migration if needed
+npm run migrate
+
+# Rebuild application
 npm run build
-
-# Upload to your server
-rsync -avz --delete ./ user@your-server.com:/var/www/unlockvault/
-
-# SSH to server and restart
-ssh user@your-server.com "cd /var/www/unlockvault && npm install --production && pm2 restart unlockvault"
 ```
 
-### 4. 🏠 Local Production Testing
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**MongoDB Connection Failed**
+- Check MongoDB is running
+- Verify connection string
+- Check network connectivity
+- Ensure database exists
+
+**Migration Errors**
+- Check JSON files exist
+- Verify MongoDB permissions
+- Check disk space
+- Review error logs
+
+**Build Failures**
+- Clear `.next` folder
+- Delete `node_modules` and reinstall
+- Check Node.js version compatibility
+- Verify environment variables
+
+### Debug Mode
 ```bash
-npm run build
-npm start
-# Visit http://localhost:3000
+# Enable debug logging
+DEBUG=* npm run dev
+
+# Check MongoDB connection
+node -e "require('./lib/mongodb').connectToDatabase().then(() => console.log('Connected')).catch(console.error)"
 ```
-
-## Bitbucket Pipelines Setup
-
-### Enable Pipelines
-1. Go to your Bitbucket repository
-2. Navigate to **Pipelines** in the left sidebar
-3. Click **Enable Pipelines**
-4. The `bitbucket-pipelines.yml` file is already configured
-
-### Environment Variables
-Add these in Bitbucket Repository Settings > Pipelines > Repository variables:
-
-```bash
-# For Vercel deployment
-VERCEL_TOKEN=your_vercel_token
-VERCEL_ORG_ID=your_org_id
-VERCEL_PROJECT_ID=your_project_id
-
-# For Netlify deployment
-NETLIFY_AUTH_TOKEN=your_netlify_token
-NETLIFY_SITE_ID=your_site_id
-
-# Application environment variables
-MONGODB_URI=mongodb+srv://unlockvault:HM1b5XXUeTQ8fkZK@unlockvault.maja2ph.mongodb.net/unlockvault.xyz?retryWrites=true&w=majority
-JWT_SECRET=unlockvault-super-secure-jwt-secret-key-2024
-NEXT_PUBLIC_GA_ID=G-DQE75NNT98
-NEXT_PUBLIC_HOTJAR_ID=6438859
-NEXT_PUBLIC_CLARITY_ID=s1facumamm
-NEXT_PUBLIC_SITE_URL=https://unlockvault.xyz
-```
-
-## Automatic Deployment Workflow
-
-### Main Branch (Production)
-- Push to `main` branch triggers automatic deployment
-- Builds and tests the application
-- Deploys to production environment
-
-### Pull Requests
-- Creates preview deployments
-- Runs tests and builds
-- Perfect for testing before merging
-
-### Manual Deployment
-```bash
-# Commit and push changes
-git add .
-git commit -m "Your commit message"
-git push origin main
-
-# Pipeline will automatically trigger
-```
-
-## 📊 Analytics & Monitoring
-
-Your website includes comprehensive analytics:
-
-### Google Analytics 4
-- **Tracking ID**: `G-DQE75NNT98`
-- **Dashboard**: https://analytics.google.com
-- **Features**: Enhanced E-commerce, CPA tracking, conversion goals
-
-### Hotjar
-- **Site ID**: `6438859`
-- **Dashboard**: https://insights.hotjar.com
-- **Features**: Heatmaps, session recordings, user feedback
-
-### Microsoft Clarity
-- **Project ID**: `s1facumamm`
-- **Dashboard**: https://clarity.microsoft.com
-- **Features**: Click tracking, scroll maps, user behavior
-
-## 🔒 Security Features
-
-- SSL/TLS encryption
-- Security headers (CSP, HSTS, XSS Protection)
-- Bot protection and rate limiting
-- CSRF protection
-- Input validation and sanitization
-
-## 🎯 CPA Marketing Features
-
-- **Conversion Tracking**: GA4 Enhanced E-commerce events
-- **Click Tracking**: CPA link monitoring and attribution
-- **User Behavior**: Heat maps and interaction tracking
-- **Bot Protection**: Advanced filtering for quality traffic
-- **A/B Testing**: Ready for conversion optimization
-
-## 🚨 Troubleshooting
-
-### Build Failures
-```bash
-# Clear cache and rebuild
-npm run clean
-npm install
-npm run build
-```
-
-### Environment Issues
-- Verify all environment variables are set
-- Check MongoDB connection string
-- Ensure domain matches in all configs
-
-### Analytics Not Working
-- Verify tracking IDs in environment variables
-- Check browser console for errors
-- Ensure scripts are loading properly
 
 ## 📞 Support
 
 For deployment issues:
-1. Check Bitbucket Pipelines logs
-2. Verify environment variables
-3. Test locally with production build
-4. Check analytics dashboards for data flow
+1. Check logs for error details
+2. Verify all environment variables
+3. Test MongoDB connection separately
+4. Review deployment platform documentation
+
+## 🎯 Production Optimization
+
+- Enable MongoDB connection pooling
+- Configure caching (Redis)
+- Set up CDN for static assets
+- Enable gzip compression
+- Optimize images and assets
+- Configure monitoring and alerts
 
 ---
 

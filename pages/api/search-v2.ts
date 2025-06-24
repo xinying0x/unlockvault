@@ -1,179 +1,307 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '../../lib/mongodb';
-import { logger } from '../../lib/logger';
-import { cache } from '../../lib/cache';
-import { searchRateLimit } from '../../lib/rateLimit';
+import { connectToDatabase } from '../../lib/mongodb';
+import { ObjectId } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
 
+interface Offer {
+  _id?: ObjectId;
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  image: string;
+  category: string;
+  type: 'tool' | 'app' | 'game';
+  lockerLinks: { [key: string]: string };
+  views: number;
+  unlocks: number;
+  keywords: string[];
+  addedAt: string;
+  featured?: boolean;
+  rating: number;
+  status: 'active' | 'draft' | 'archived';
+  gallery?: string[];
+  features?: string[];
+}
+
+interface Article {
+  _id?: ObjectId;
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  content: string;
+  image: string;
+  author: string;
+  category: string;
+  tags: string[];
+  published: boolean;
+  views: number;
+  createdAt: string;
+}
+
+interface SearchResult {
+  type: 'offer' | 'article';
+  data: Offer | Article;
+  relevance: number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  // Apply rate limiting
-  const rateLimitResult = searchRateLimit(req);
-  
-  // Set rate limit headers
-  res.setHeader('X-RateLimit-Limit', rateLimitResult.limit);
-  res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
-  res.setHeader('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+  const { 
+    q: query, 
+    type, 
+    category, 
+    limit = '20',
+    page = '1' 
+  } = req.query;
 
-  if (!rateLimitResult.success) {
-    return res.status(429).json({ 
-      error: 'Too many requests',
-      message: 'Rate limit exceeded. Please try again later.',
-      retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
-    });
+  if (!query || typeof query !== 'string') {
+    return res.status(400).json({ message: 'Search query is required' });
   }
-
-  const startTime = Date.now();
-  const clientIP = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
 
   try {
-    const { q: query = '', category = '', type = '', sort = 'relevance', page = '1', limit = '20' } = req.query;
-    
-    const pageNum = Math.max(1, parseInt(page as string) || 1);
-    const limitNum = Math.min(50, Math.max(1, parseInt(limit as string) || 20)); // Max 50 items per page
+    // Try MongoDB first
+    const { db } = await connectToDatabase();
+    const offersCollection = db.collection<Offer>('offers');
+    const articlesCollection = db.collection<Article>('articles');
+
+    const searchResults: SearchResult[] = [];
+    const searchTerm = query.toLowerCase().trim();
+    const limitNum = parseInt(limit as string) || 20;
+    const pageNum = parseInt(page as string) || 1;
     const skip = (pageNum - 1) * limitNum;
 
-    // Create cache key
-    const cacheKey = `search:${query}:${category}:${type}:${sort}:${pageNum}:${limitNum}`;
-    
-    // Check cache first
-    const cachedResult = cache.get(cacheKey);
-    if (cachedResult) {
-      logger.debug('Search cache hit', { query, type, category });
-      return res.json(cachedResult);
-    }
+    // Search offers if type is not specified or is 'offer'
+    if (!type || type === 'offer' || type === 'all') {
+      const offerFilter: any = { status: 'active' };
+      
+      if (category && category !== 'all') {
+        offerFilter.category = new RegExp(category as string, 'i');
+      }
 
-    // Use JSON file as primary data source
-    const filePath = path.join(process.cwd(), 'data', 'offers.json');
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    const allOffers = JSON.parse(fileContents);
-    
-    // Filter offers based on status
-    let filteredOffers = allOffers.filter((offer: any) => offer.status === 'active');
-    
-    // Apply search filters
-    if (query) {
-      const queryLower = Array.isArray(query) ? query[0].toLowerCase() : query.toLowerCase();
-      filteredOffers = filteredOffers.filter((offer: any) => 
-        offer.title.toLowerCase().includes(queryLower) ||
-        offer.description.toLowerCase().includes(queryLower) ||
-        offer.category.toLowerCase().includes(queryLower) ||
-        (offer.keywords && offer.keywords.some((keyword: string) => 
-          keyword.toLowerCase().includes(queryLower)
-        ))
-      );
-    }
+      // Build search query for offers
+      offerFilter.$or = [
+        { title: new RegExp(searchTerm, 'i') },
+        { description: new RegExp(searchTerm, 'i') },
+        { keywords: { $in: [new RegExp(searchTerm, 'i')] } },
+        { category: new RegExp(searchTerm, 'i') }
+      ];
 
-    if (category && category !== 'all') {
-      const categoryLower = Array.isArray(category) ? category[0].toLowerCase() : category.toLowerCase();
-      filteredOffers = filteredOffers.filter((offer: any) => 
-        offer.category.toLowerCase().includes(categoryLower)
-      );
-    }
+      const offers = await offersCollection
+        .find(offerFilter)
+        .sort({ views: -1, addedAt: -1 })
+        .toArray();
 
-    if (type && type !== 'all') {
-      filteredOffers = filteredOffers.filter((offer: any) => offer.type === type);
-    }
+      // Calculate relevance for offers
+      offers.forEach(offer => {
+        let relevance = 0;
+        const titleMatch = offer.title.toLowerCase().includes(searchTerm);
+        const descMatch = offer.description.toLowerCase().includes(searchTerm);
+        const keywordMatch = offer.keywords.some(k => k.toLowerCase().includes(searchTerm));
+        const categoryMatch = offer.category.toLowerCase().includes(searchTerm);
 
-    // Sort offers
-    switch (sort) {
-      case 'newest':
-        filteredOffers.sort((a: any, b: any) => 
-          new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
-        );
-        break;
-      case 'popular':
-        filteredOffers.sort((a: any, b: any) => 
-          (b.views * 0.3 + b.unlocks * 0.7) - (a.views * 0.3 + a.unlocks * 0.7)
-        );
-        break;
-      case 'views':
-        filteredOffers.sort((a: any, b: any) => b.views - a.views);
-        break;
-      case 'unlocks':
-        filteredOffers.sort((a: any, b: any) => b.unlocks - a.unlocks);
-        break;
-      case 'relevance':
-      default:
-        if (!query) {
-          filteredOffers.sort((a: any, b: any) => {
-            if (a.featured && !b.featured) return -1;
-            if (!a.featured && b.featured) return 1;
-            return (b.views * 0.3 + b.unlocks * 0.7) - (a.views * 0.3 + a.unlocks * 0.7);
-          });
-        }
-        break;
-    }
+        if (titleMatch) relevance += 10;
+        if (descMatch) relevance += 5;
+        if (keywordMatch) relevance += 7;
+        if (categoryMatch) relevance += 3;
+        if (offer.featured) relevance += 2;
 
-    // Apply pagination
-    const totalFilteredCount = filteredOffers.length;
-    const startIndex = skip;
-    const endIndex = skip + limitNum;
-    const paginatedOffers = filteredOffers.slice(startIndex, endIndex);
-    
-    const hasMore = endIndex < totalFilteredCount;
-    const responseData = {
-      offers: paginatedOffers.map((offer: any) => ({
-        id: offer.id,
-        slug: offer.slug,
-        title: offer.title,
-        description: offer.description,
-        image: offer.image,
-        category: offer.category,
-        type: offer.type,
-        views: offer.views || 0,
-        unlocks: offer.unlocks || 0,
-        keywords: offer.keywords || [],
-        addedAt: offer.addedAt || new Date().toISOString(),
-        featured: offer.featured || false,
-        rating: offer.rating || 4.5
-      })),
-      totalCount: totalFilteredCount,
-      filteredCount: totalFilteredCount,
-      hasMore,
-      currentPage: pageNum,
-      totalPages: Math.ceil(totalFilteredCount / limitNum)
-    };
-    
-    // Cache results for 1 minute to ensure fresh data
-    cache.set(cacheKey, responseData, 1);
-    
-    const duration = Date.now() - startTime;
-    
-    if (duration > 1000) {
-      logger.warn('Slow operation: Search operation completed', { 
-        duration: `${duration}ms`,
-        query, 
-        type, 
-        category, 
-        resultCount: responseData.offers.length,
-        ip: clientIP
+        const { _id, ...offerData } = offer;
+        searchResults.push({
+          type: 'offer',
+          data: offerData,
+          relevance
+        });
       });
     }
 
-    res.json(responseData);
+    // Search articles if type is not specified or is 'article'
+    if (!type || type === 'article' || type === 'all') {
+      const articleFilter: any = { published: true };
+      
+      if (category && category !== 'all') {
+        articleFilter.category = new RegExp(category as string, 'i');
+      }
+
+      // Build search query for articles
+      articleFilter.$or = [
+        { title: new RegExp(searchTerm, 'i') },
+        { summary: new RegExp(searchTerm, 'i') },
+        { content: new RegExp(searchTerm, 'i') },
+        { tags: { $in: [new RegExp(searchTerm, 'i')] } },
+        { category: new RegExp(searchTerm, 'i') }
+      ];
+
+      const articles = await articlesCollection
+        .find(articleFilter)
+        .sort({ views: -1, createdAt: -1 })
+        .toArray();
+
+      // Calculate relevance for articles
+      articles.forEach(article => {
+        let relevance = 0;
+        const titleMatch = article.title.toLowerCase().includes(searchTerm);
+        const summaryMatch = article.summary.toLowerCase().includes(searchTerm);
+        const contentMatch = article.content.toLowerCase().includes(searchTerm);
+        const tagMatch = article.tags.some(t => t.toLowerCase().includes(searchTerm));
+        const categoryMatch = article.category.toLowerCase().includes(searchTerm);
+
+        if (titleMatch) relevance += 10;
+        if (summaryMatch) relevance += 7;
+        if (contentMatch) relevance += 5;
+        if (tagMatch) relevance += 6;
+        if (categoryMatch) relevance += 3;
+
+        const { _id, ...articleData } = article;
+        searchResults.push({
+          type: 'article',
+          data: articleData,
+          relevance
+        });
+      });
+    }
+
+    // Sort by relevance and apply pagination
+    searchResults.sort((a, b) => b.relevance - a.relevance);
+    
+    const total = searchResults.length;
+    const paginatedResults = searchResults.slice(skip, skip + limitNum);
+
+    const response = {
+      results: paginatedResults,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      },
+      query: searchTerm,
+      filters: {
+        type: type || 'all',
+        category: category || 'all'
+      }
+    };
+
+    res.status(200).json(response);
 
   } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.error('Search error', error, { 
-      query: req.query.q, 
-      ip: clientIP,
-      duration 
-    });
+    console.error('MongoDB search error, falling back to JSON:', error);
+    
+    // Fallback to JSON files if MongoDB is not available
+    try {
+      const searchResults: SearchResult[] = [];
+      const searchTerm = query.toLowerCase().trim();
+      const limitNum = parseInt(limit as string) || 20;
+      const pageNum = parseInt(page as string) || 1;
+      const skip = (pageNum - 1) * limitNum;
 
-    // Return empty results on error instead of dummy data
-    res.status(200).json({
-      offers: [],
-      totalCount: 0,
-      filteredCount: 0,
-      hasMore: false,
-      currentPage: 1,
-      totalPages: 0,
-      error: 'Search temporarily unavailable'
-    });
+      // Search offers from JSON
+      if (!type || type === 'offer' || type === 'all') {
+        const offersPath = path.join(process.cwd(), 'data', 'offers.json');
+        const offersContent = fs.readFileSync(offersPath, 'utf8');
+        const offers: Offer[] = JSON.parse(offersContent);
+
+        offers
+          .filter(offer => offer.status === 'active')
+          .filter(offer => {
+            if (category && category !== 'all') {
+              return offer.category.toLowerCase().includes((category as string).toLowerCase());
+            }
+            return true;
+          })
+          .forEach(offer => {
+            const titleMatch = offer.title.toLowerCase().includes(searchTerm);
+            const descMatch = offer.description.toLowerCase().includes(searchTerm);
+            const keywordMatch = offer.keywords.some(k => k.toLowerCase().includes(searchTerm));
+            const categoryMatch = offer.category.toLowerCase().includes(searchTerm);
+
+            if (titleMatch || descMatch || keywordMatch || categoryMatch) {
+              let relevance = 0;
+              if (titleMatch) relevance += 10;
+              if (descMatch) relevance += 5;
+              if (keywordMatch) relevance += 7;
+              if (categoryMatch) relevance += 3;
+              if (offer.featured) relevance += 2;
+
+              searchResults.push({
+                type: 'offer',
+                data: offer,
+                relevance
+              });
+            }
+          });
+      }
+
+      // Search articles from JSON
+      if (!type || type === 'article' || type === 'all') {
+        const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
+        const articlesContent = fs.readFileSync(articlesPath, 'utf8');
+        const articles: Article[] = JSON.parse(articlesContent);
+
+        articles
+          .filter(article => article.published)
+          .filter(article => {
+            if (category && category !== 'all') {
+              return article.category.toLowerCase().includes((category as string).toLowerCase());
+            }
+            return true;
+          })
+          .forEach(article => {
+            const titleMatch = article.title.toLowerCase().includes(searchTerm);
+            const summaryMatch = article.summary.toLowerCase().includes(searchTerm);
+            const contentMatch = article.content.toLowerCase().includes(searchTerm);
+            const tagMatch = article.tags.some(t => t.toLowerCase().includes(searchTerm));
+            const categoryMatch = article.category.toLowerCase().includes(searchTerm);
+
+            if (titleMatch || summaryMatch || contentMatch || tagMatch || categoryMatch) {
+              let relevance = 0;
+              if (titleMatch) relevance += 10;
+              if (summaryMatch) relevance += 7;
+              if (contentMatch) relevance += 5;
+              if (tagMatch) relevance += 6;
+              if (categoryMatch) relevance += 3;
+
+              searchResults.push({
+                type: 'article',
+                data: article,
+                relevance
+              });
+            }
+          });
+      }
+
+      // Sort by relevance and apply pagination
+      searchResults.sort((a, b) => b.relevance - a.relevance);
+      
+      const total = searchResults.length;
+      const paginatedResults = searchResults.slice(skip, skip + limitNum);
+
+      const response = {
+        results: paginatedResults,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum)
+        },
+        query: searchTerm,
+        filters: {
+          type: type || 'all',
+          category: category || 'all'
+        }
+      };
+
+      res.status(200).json(response);
+
+    } catch (fallbackError) {
+      console.error('Fallback search error:', fallbackError);
+      res.status(500).json({ message: 'Search service temporarily unavailable' });
+    }
   }
 } 

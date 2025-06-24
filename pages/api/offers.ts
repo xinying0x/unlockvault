@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '../../lib/mongodb';
+import { connectToDatabase } from '../../lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { autoSyncOffers } from '../../lib/syncOffers';
+import fs from 'fs';
+import path from 'path';
 
 interface Offer {
   _id?: ObjectId;
@@ -18,26 +19,28 @@ interface Offer {
   keywords: string[];
   addedAt: string;
   featured?: boolean;
+  rating: number;
   status: 'active' | 'draft' | 'archived';
-  lastModified: string;
-  useDummyStats: boolean;
+  gallery?: string[];
+  features?: string[];
+  lastModified?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const client = await clientPromise;
-    const db = client.db('unlockvault');
+    // Try MongoDB first
+    const { db } = await connectToDatabase();
     const collection = db.collection<Offer>('offers');
 
     switch (req.method) {
       case 'GET':
-        const { category, type, featured, status = 'active' } = req.query;
+        const { category, type, featured, status = 'active', limit } = req.query;
         
         // Build query filter
         const filter: any = { status };
         
         if (category && category !== 'all') {
-          filter.category = category;
+          filter.category = new RegExp(category as string, 'i');
         }
         
         if (type && type !== 'all') {
@@ -48,10 +51,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           filter.featured = true;
         }
 
-        const offers = await collection
-          .find(filter)
-          .sort({ addedAt: -1 })
-          .toArray();
+        let query = collection.find(filter).sort({ addedAt: -1 });
+        
+        if (limit && !isNaN(Number(limit))) {
+          query = query.limit(Number(limit));
+        }
+
+        const offers = await query.toArray();
 
         // Remove MongoDB _id from response
         const cleanOffers = offers.map(({ _id, ...offer }) => offer);
@@ -64,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // Generate unique ID and slug if not provided
         if (!newOffer.id) {
-          newOffer.id = Date.now().toString();
+          newOffer.id = new ObjectId().toString();
         }
         
         if (!newOffer.slug) {
@@ -80,7 +86,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         newOffer.views = newOffer.views || 0;
         newOffer.unlocks = newOffer.unlocks || 0;
         newOffer.status = newOffer.status || 'active';
-        newOffer.useDummyStats = newOffer.useDummyStats || false;
+        newOffer.rating = newOffer.rating || 4.5;
+        newOffer.featured = newOffer.featured || false;
+        newOffer.gallery = newOffer.gallery || [];
+        newOffer.features = newOffer.features || [];
 
         // Basic XSS prevention
         const sanitizeString = (str: string) => {
@@ -97,9 +106,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const result = await collection.insertOne(newOffer);
         
-        // Auto-sync to JSON file for search
-        await autoSyncOffers();
-        
         res.status(201).json({ 
           message: 'Offer created successfully', 
           id: result.insertedId 
@@ -111,57 +117,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
-    console.error('Database error:', error);
+    console.error('MongoDB error, falling back to JSON:', error);
     
-    // Fallback to dummy offers when MongoDB is not available
-    if (req.method === 'GET') {
-      const dummyOffers = [
-        {
-          id: 'dummy-1',
-          slug: 'adobe-photoshop-2024',
-          title: 'Adobe Photoshop 2024',
-          description: 'Professional photo editing software with advanced AI features',
-          image: '/images/placeholder.png',
-          category: 'Design',
-          type: 'app' as const,
-          lockerLinks: {
-            'linkvertise': 'https://example.com/link1',
-            'adfly': 'https://example.com/link2'
-          },
-          views: 15420,
-          unlocks: 8932,
-          keywords: ['photoshop', 'adobe', 'design', 'photo editing'],
-          addedAt: new Date().toISOString(),
-          featured: true,
-          status: 'active' as const,
-          lastModified: new Date().toISOString(),
-          useDummyStats: false
-        },
-        {
-          id: 'dummy-2',
-          slug: 'microsoft-office-365',
-          title: 'Microsoft Office 365',
-          description: 'Complete office suite with Word, Excel, PowerPoint and more',
-          image: '/images/placeholder.png',
-          category: 'Productivity',
-          type: 'app' as const,
-          lockerLinks: {
-            'linkvertise': 'https://example.com/link3',
-            'adfly': 'https://example.com/link4'
-          },
-          views: 23150,
-          unlocks: 12043,
-          keywords: ['office', 'microsoft', 'word', 'excel', 'powerpoint'],
-          addedAt: new Date().toISOString(),
-          featured: true,
-          status: 'active' as const,
-          lastModified: new Date().toISOString(),
-          useDummyStats: false
-        }
-      ];
+    // Fallback to JSON file if MongoDB is not available
+    try {
+      if (req.method === 'GET') {
+        const filePath = path.join(process.cwd(), 'data', 'offers.json');
+        const fileContents = fs.readFileSync(filePath, 'utf8');
+        const allOffers: Offer[] = JSON.parse(fileContents);
 
-      res.status(200).json(dummyOffers);
-    } else {
+        const { category, type, featured, status = 'active', limit } = req.query;
+        
+        // Filter offers based on query parameters
+        let filteredOffers = allOffers.filter(offer => 
+          offer.status === status || offer.status === 'active'
+        );
+        
+        if (category && category !== 'all') {
+          filteredOffers = filteredOffers.filter(offer => 
+            offer.category.toLowerCase().includes((category as string).toLowerCase())
+          );
+        }
+        
+        if (type && type !== 'all') {
+          filteredOffers = filteredOffers.filter(offer => 
+            offer.type === type
+          );
+        }
+        
+        if (featured === 'true') {
+          filteredOffers = filteredOffers.filter(offer => 
+            offer.featured === true
+          );
+        }
+
+        // Sort by addedAt date (newest first)
+        filteredOffers.sort((a, b) => 
+          new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
+        );
+
+        // Apply limit if specified
+        if (limit && !isNaN(Number(limit))) {
+          filteredOffers = filteredOffers.slice(0, Number(limit));
+        }
+        
+        res.status(200).json(filteredOffers);
+      } else {
+        res.status(201).json({ 
+          message: 'Offer created successfully (fallback mode)',
+          id: Date.now().toString()
+        });
+      }
+    } catch (fallbackError) {
+      console.error('Fallback error:', fallbackError);
       res.status(500).json({ message: 'Internal server error' });
     }
   }

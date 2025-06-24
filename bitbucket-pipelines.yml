@@ -4,15 +4,23 @@ definitions:
   services:
     docker:
       memory: 2048
+    mongodb:
+      image: mongo:6.0
+      environment:
+        MONGO_INITDB_DATABASE: unlockvault
 
 pipelines:
   default:
     - step:
         name: Build and Test
+        services:
+          - mongodb
         caches:
           - node
         script:
           - npm ci
+          - export MONGODB_URI="mongodb://localhost:27017/unlockvault"
+          - export MONGODB_DB="unlockvault"
           - npm run build
           - npm run lint --if-present
         artifacts:
@@ -21,15 +29,22 @@ pipelines:
           - package*.json
           - next.config.js
           - vercel.json
+          - data/**
 
   branches:
     main:
       - step:
           name: Build Production
+          services:
+            - mongodb
           caches:
             - node
           script:
             - npm ci
+            - export MONGODB_URI="mongodb://localhost:27017/unlockvault"
+            - export MONGODB_DB="unlockvault"
+            # Setup database with sample data
+            - npm run migrate
             - npm run build
           artifacts:
             - .next/**
@@ -37,31 +52,78 @@ pipelines:
             - package*.json
             - next.config.js
             - vercel.json
+            - data/**
+            - scripts/**
       - step:
           name: Deploy to Production
           deployment: production
           script:
             - echo "Deploying to production..."
-            # Add your deployment commands here
-            # For example, if using Vercel:
+            - echo "Setting up environment variables..."
+            
+            # Vercel deployment (uncomment if using Vercel)
             # - npm install -g vercel
             # - vercel --token $VERCEL_TOKEN --prod --yes
-            # 
-            # For VPS deployment:
-            # - rsync -avz --delete ./ user@server:/var/www/unlockvault/
-            # - ssh user@server "cd /var/www/unlockvault && npm install --production && pm2 restart unlockvault"
-            #
-            # For Netlify:
+            
+            # VPS deployment with MongoDB (uncomment and configure if using VPS)
+            # - apt-get update && apt-get install -y rsync openssh-client
+            # - mkdir -p ~/.ssh
+            # - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+            # - chmod 600 ~/.ssh/id_rsa
+            # - ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+            # - rsync -avz --delete --exclude='.git' --exclude='node_modules' ./ $SERVER_USER@$SERVER_HOST:/var/www/unlockvault/
+            # - ssh $SERVER_USER@$SERVER_HOST "cd /var/www/unlockvault && npm install --production"
+            # - ssh $SERVER_USER@$SERVER_HOST "cd /var/www/unlockvault && npm run migrate"
+            # - ssh $SERVER_USER@$SERVER_HOST "cd /var/www/unlockvault && pm2 restart unlockvault || pm2 start npm --name unlockvault -- start"
+            
+            # Netlify deployment (uncomment if using Netlify)
             # - npm install -g netlify-cli
             # - netlify deploy --prod --dir=.next --auth $NETLIFY_AUTH_TOKEN --site $NETLIFY_SITE_ID
+            
+            # Railway deployment (uncomment if using Railway)
+            # - npm install -g @railway/cli
+            # - railway login --token $RAILWAY_TOKEN
+            # - railway up --service $RAILWAY_SERVICE_ID
+            
+            - echo "Deployment completed successfully!"
 
   pull-requests:
     '**':
       - step:
           name: Build and Test PR
+          services:
+            - mongodb
           caches:
             - node
           script:
             - npm ci
+            - export MONGODB_URI="mongodb://localhost:27017/unlockvault"
+            - export MONGODB_DB="unlockvault"
+            - npm run migrate
             - npm run build
-            - npm run lint --if-present 
+            - npm run lint --if-present
+
+  custom:
+    setup-database:
+      - step:
+          name: Setup Database
+          services:
+            - mongodb
+          script:
+            - npm ci
+            - export MONGODB_URI="mongodb://localhost:27017/unlockvault"
+            - export MONGODB_DB="unlockvault"
+            - npm run migrate
+            - echo "Database setup completed!"
+    
+    migrate-data:
+      - step:
+          name: Migrate Data to MongoDB
+          services:
+            - mongodb
+          script:
+            - npm ci
+            - export MONGODB_URI="${MONGODB_URI:-mongodb://localhost:27017/unlockvault}"
+            - export MONGODB_DB="${MONGODB_DB:-unlockvault}"
+            - npm run migrate
+            - echo "Data migration completed!" 

@@ -6,9 +6,12 @@ import Image from 'next/image';
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
+    
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
       setScrolled(isScrolled);
@@ -31,6 +34,7 @@ const Navbar: React.FC = () => {
     { href: '/tools', label: 'Tools', icon: '🛠️' },
     { href: '/apps', label: 'Apps', icon: '📱' },
     { href: '/games', label: 'Games', icon: '🎮' },
+    { href: '/articles', label: 'Articles', icon: '📄' },
     { href: '/search', label: 'Search', icon: '🔍' }
   ];
 
@@ -40,6 +44,54 @@ const Navbar: React.FC = () => {
     }
     return router.pathname.startsWith(href);
   };
+
+  // Prevent hydration mismatch by not rendering emojis until mounted
+  if (!mounted) {
+    return (
+      <>
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16 sm:h-20">
+              <Link href="/" className="flex items-center space-x-3 group focus:outline-none">
+                <div className="relative flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg border border-purple-400/20">
+                    <span className="text-xl sm:text-2xl">🔓</span>
+                  </div>
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent leading-tight">
+                    UnlockVault
+                  </span>
+                  <span className="text-xs text-gray-400 hidden sm:block leading-tight">
+                    Premium Tools
+                  </span>
+                </div>
+              </Link>
+              <div className="hidden lg:flex items-center space-x-1">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="relative px-4 py-2 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-slate-800/50 transition-all duration-300"
+                  >
+                    <span>{link.label}</span>
+                  </Link>
+                ))}
+              </div>
+              <button className="lg:hidden relative w-10 h-10 rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 flex items-center justify-center">
+                <div className="w-5 h-5 flex flex-col justify-center items-center">
+                  <span className="w-4 h-0.5 bg-white"></span>
+                  <span className="w-4 h-0.5 bg-white mt-1"></span>
+                  <span className="w-4 h-0.5 bg-white mt-1"></span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </nav>
+        <div className="h-16 sm:h-20"></div>
+      </>
+    );
+  }
 
   return (
     <>

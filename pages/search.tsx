@@ -4,7 +4,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import ResponsiveCard from '../components/ResponsiveCard';
+
 import SEOHead from '../components/SEOHead';
 
 interface Offer {
@@ -23,9 +23,30 @@ interface Offer {
   rating: number;
 }
 
+interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  content: string;
+  image: string;
+  author: string;
+  category: string;
+  tags: string[];
+  published: boolean;
+  views: number;
+  createdAt: string;
+}
+
+interface SearchResult {
+  type: 'offer' | 'article';
+  data: Offer | Article;
+  relevance: number;
+}
+
 interface SearchPageProps {
   initialQuery?: string;
-  initialOffers: Offer[];
+  initialResults: SearchResult[];
   categories: string[];
   totalCount: number;
 }
@@ -34,20 +55,20 @@ const ITEMS_PER_PAGE = 12;
 
 const SearchPage: React.FC<SearchPageProps> = ({ 
   initialQuery = '', 
-  initialOffers, 
+  initialResults, 
   categories, 
   totalCount 
 }) => {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
-  const [offers, setOffers] = useState<Offer[]>(initialOffers);
+  const [results, setResults] = useState<SearchResult[]>(initialResults);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('relevance');
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialOffers.length >= ITEMS_PER_PAGE);
-  const [searchStats, setSearchStats] = useState({ total: totalCount, filtered: initialOffers.length });
+  const [hasMore, setHasMore] = useState(initialResults.length >= ITEMS_PER_PAGE);
+  const [searchStats, setSearchStats] = useState({ total: totalCount, filtered: initialResults.length });
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement>(null);
 
@@ -81,8 +102,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const debouncedSearch = useCallback(
     debounce(async (searchQuery: string, category: string, type: string, sort: string, page: number = 1) => {
       if (!searchQuery.trim() && category === 'all' && type === 'all') {
-        setOffers(initialOffers);
-        setSearchStats({ total: totalCount, filtered: initialOffers.length });
+        setResults(initialResults);
+        setSearchStats({ total: totalCount, filtered: initialResults.length });
         setIsLoadingMore(false);
         return;
       }
@@ -96,7 +117,6 @@ const SearchPage: React.FC<SearchPageProps> = ({
           q: searchQuery,
           category: category !== 'all' ? category : '',
           type: type !== 'all' ? type : '',
-          sort,
           page: page.toString(),
           limit: ITEMS_PER_PAGE.toString()
         });
@@ -107,36 +127,36 @@ const SearchPage: React.FC<SearchPageProps> = ({
           const data = await response.json();
           
           if (page === 1) {
-            setOffers(data.offers || []);
+            setResults(data.results || []);
           } else {
-            setOffers(prev => [...prev, ...(data.offers || [])]);
+            setResults(prev => [...prev, ...(data.results || [])]);
           }
           
-          setHasMore(data.hasMore || false);
+          setHasMore(data.pagination.page < data.pagination.pages);
           setSearchStats({ 
-            total: data.totalCount || totalCount, 
-            filtered: data.filteredCount || data.offers?.length || 0 
+            total: data.pagination.total || totalCount, 
+            filtered: data.pagination.total || data.results?.length || 0 
           });
         } else {
-          // Fallback to initial offers on error
+          // Fallback to initial results on error
           if (page === 1) {
-            setOffers(initialOffers);
-            setSearchStats({ total: totalCount, filtered: initialOffers.length });
+            setResults(initialResults);
+            setSearchStats({ total: totalCount, filtered: initialResults.length });
           }
         }
       } catch (error) {
         console.error('Search error:', error);
-        // Fallback to initial offers on error
+        // Fallback to initial results on error
         if (page === 1) {
-          setOffers(initialOffers);
-          setSearchStats({ total: totalCount, filtered: initialOffers.length });
+          setResults(initialResults);
+          setSearchStats({ total: totalCount, filtered: initialResults.length });
         }
       } finally {
         setLoading(false);
         setIsLoadingMore(false);
       }
     }, 300),
-    [initialOffers, totalCount]
+    [initialResults, totalCount]
   );
 
   // Handle search input change
@@ -184,239 +204,269 @@ const SearchPage: React.FC<SearchPageProps> = ({
     setSelectedType('all');
     setSortBy('relevance');
     setCurrentPage(1);
-    setOffers(initialOffers);
-    setSearchStats({ total: totalCount, filtered: initialOffers.length });
+    setResults(initialResults);
+    setSearchStats({ total: totalCount, filtered: initialResults.length });
   };
 
   const filterOptions = useMemo(() => ({
     types: [
-      { value: 'all', label: 'All Types', icon: '📦' },
-      { value: 'tool', label: 'Tools', icon: '🛠️' },
-      { value: 'app', label: 'Apps', icon: '📱' },
-      { value: 'game', label: 'Games', icon: '🎮' }
+      { value: 'all', label: 'All Content', icon: '📦' },
+      { value: 'offer', label: 'Offers', icon: '🎁' },
+      { value: 'article', label: 'Articles', icon: '📄' }
     ],
     sorts: [
       { value: 'relevance', label: 'Most Relevant', icon: '🎯' },
       { value: 'newest', label: 'Newest', icon: '🆕' },
       { value: 'popular', label: 'Most Popular', icon: '🔥' },
-      { value: 'rating', label: 'Highest Rated', icon: '⭐' }
+      { value: 'views', label: 'Most Viewed', icon: '👁️' }
     ]
   }), []);
 
+  const renderSearchResult = (result: SearchResult, index: number) => {
+    if (result.type === 'offer') {
+      const offer = result.data as Offer;
+      const offerHref = offer.slug ? `/offers/${offer.slug}` : `/offers/${offer.id}`;
+      return (
+        <div key={`offer-${offer.id}-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-shadow duration-300">
+          <Link href={offerHref} className="block h-full">
+            <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
+              <Image
+                src={offer.image || '/images/placeholder.png'}
+                alt={offer.title || 'Offer'}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+              <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                🎁 Offer
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                {offer.title || 'Untitled Offer'}
+              </h3>
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {offer.description || 'No description available'}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span className="bg-gray-100 px-2 py-1 rounded">
+                  {offer.category || 'Uncategorized'}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span>👁️ {offer.views || 0}</span>
+                  <span>🔓 {offer.unlocks || 0}</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      );
+    } else {
+      const article = result.data as Article;
+      const articleHref = article.slug ? `/articles/${article.slug}` : `/articles/${article.id}`;
+      return (
+        <div key={`article-${article.id}-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-shadow duration-300">
+          <Link href={articleHref} className="block h-full">
+            <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
+              <Image
+                src={article.image || '/images/placeholder.png'}
+                alt={article.title || 'Article'}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+              <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                📄 Article
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-lg mb-2 group-hover:text-green-600 transition-colors">
+                {article.title || 'Untitled Article'}
+              </h3>
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {article.summary || 'No summary available'}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span className="bg-gray-100 px-2 py-1 rounded">
+                  {article.category || 'Uncategorized'}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span>👁️ {article.views || 0}</span>
+                  <span>✍️ {article.author || 'Unknown'}</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      );
+    }
+  };
+
   return (
     <>
-      <SEOHead
-        title={`Search ${query ? `- ${query}` : ''} | UnlockVault`}
-        description={`Search through our vast library of free tools, apps, and games. ${query ? `Search results for: ${query}` : ''}`}
-        keywords={['search', 'free tools', 'apps', 'games', query].filter(Boolean)}
-        url={`https://unlockvault.com/search${query ? `?q=${encodeURIComponent(query)}` : ''}`}
+      <SEOHead 
+        title={query ? `Search Results for "${query}" - UnlockVault` : "Search - UnlockVault"}
+        description={query ? `Find the best results for "${query}" on UnlockVault` : "Search through our collection of premium software, games, and articles"}
+        url="https://unlockvault.xyz/search"
       />
-
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        {/* Hero Section */}
-        <section className="relative pt-12 pb-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            {/* Header */}
-            <div className="text-center mb-12">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6 animate-fade-in">
-                🔍 Discover Free Premium Tools
+      
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                Search UnlockVault
               </h1>
-              <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto animate-fade-in-up delay-200">
-                Search through thousands of free tools, apps, and games in our vast library
-              </p>
-            </div>
-
-            {/* Search Bar */}
-            <div className="max-w-4xl mx-auto mb-8 animate-fade-in-up delay-400">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-gray-400 text-xl">🔍</span>
-                </div>
-                <input
-                  type="text"
-                  value={query}
-                  onChange={handleSearchChange}
-                  placeholder="Search for tools, apps, games..."
-                  className="w-full pl-12 pr-4 py-4 bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-lg"
-                />
-                {query && (
-                  <button
-                    onClick={() => {
-                      setQuery('');
-                      debouncedSearch('', selectedCategory, selectedType, sortBy);
-                    }}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="max-w-6xl mx-auto mb-8 animate-fade-in-up delay-600">
-              <div className="flex flex-wrap gap-4 justify-center items-center">
-                
-                {/* Category Filter */}
-                <div className="relative min-w-[160px]">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                    className="appearance-none bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full text-sm font-medium"
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400 text-sm">📁</span>
-                  </div>
-                </div>
-
-                {/* Type Filter */}
-                <div className="relative min-w-[140px]">
-                  <select
-                    value={selectedType}
-                    onChange={(e) => handleFilterChange('type', e.target.value)}
-                    className="appearance-none bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full text-sm font-medium"
-                  >
-                    {filterOptions.types.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400 text-sm">📦</span>
-                  </div>
-                </div>
-
-                {/* Sort Filter */}
-                <div className="relative min-w-[160px]">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => handleFilterChange('sort', e.target.value)}
-                    className="appearance-none bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full text-sm font-medium"
-                  >
-                    {filterOptions.sorts.map(sort => (
-                      <option key={sort.value} value={sort.value}>
-                        {sort.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400 text-sm">🔄</span>
-                  </div>
-                </div>
-
-                {/* Clear Filters */}
-                {(query || selectedCategory !== 'all' || selectedType !== 'all' || sortBy !== 'relevance') && (
-                  <button
-                    onClick={clearFilters}
-                    className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 hover:text-red-300 px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm font-medium min-w-[120px] justify-center"
-                  >
-                    <span className="text-sm">🗑️</span>
-                    <span>Clear Filters</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Search Stats */}
-            <div className="text-center mb-16 animate-fade-in-up delay-800">
-              <p className="text-gray-400">
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    Searching...
-                  </span>
-                ) : (
-                  <>
-                    Found <span className="text-blue-400 font-bold">{searchStats.filtered.toLocaleString()}</span> results
-                    {query && query.trim() && (
-                      <span> for "<span className="text-white font-medium">{query}</span>"</span>
-                    )}
-                    {searchStats.total !== searchStats.filtered && (
-                      <span className="text-gray-500"> out of {searchStats.total.toLocaleString()}</span>
-                    )}
-                  </>
-                )}
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Find premium software, games, tools, and helpful articles
               </p>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Results Section */}
-        <section className="pb-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {offers.length === 0 && !loading ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">🔍</div>
-                <h3 className="text-xl font-bold text-white mb-3">No results found</h3>
-                <p className="text-gray-400 mb-6">Try searching with different keywords or change your filters</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Search Bar */}
+          <div className="mb-8">
+            <div className="relative max-w-2xl mx-auto">
+              <input
+                type="text"
+                value={query}
+                onChange={handleSearchChange}
+                placeholder="Search for software, games, or articles..."
+                className="w-full px-4 py-3 pl-12 pr-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Content Type Filter */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">Type:</label>
+                <select
+                  value={selectedType}
+                  onChange={(e) => handleFilterChange('type', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {filterOptions.types.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.icon} {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">Category:</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort Filter */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">Sort:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleFilterChange('sort', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {filterOptions.sorts.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.icon} {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Clear Filters */}
+              {(query || selectedCategory !== 'all' || selectedType !== 'all' || sortBy !== 'relevance') && (
                 <button
                   onClick={clearFilters}
-                  className="btn-primary"
+                  className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
                 >
-                  Clear All Filters
+                  Clear All
                 </button>
-              </div>
-            ) : (
-              <>
-                <div className="search-grid">
-                  {offers.map((offer, index) => (
-                    <div
-                      key={offer.id}
-                      className="animate-fade-in-up w-full"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <ResponsiveCard
-                        title={offer.title}
-                        description={offer.description}
-                        image={offer.image}
-                        category={offer.category}
-                        type={offer.type}
-                        rating={offer.rating}
-                        buttonText={offer.type === 'tool' ? 'Open Tool' : offer.type === 'app' ? 'Download App' : 'Download Game'}
-                        buttonHref={`/offers/${offer.slug}`}
-                        views={offer.views}
-                        unlocks={offer.unlocks}
-                        featured={offer.featured}
-                        compact={true}
-                        addedAt={offer.addedAt}
-                      />
-                    </div>
-                  ))}
-                </div>
+              )}
+            </div>
+          </div>
 
-                {/* Infinite Scroll Trigger */}
-                {hasMore && (
-                  <div ref={observerRef} className="flex justify-center items-center py-8">
-                    {isLoadingMore && (
-                      <div className="flex items-center gap-3 infinite-scroll-loader">
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-gray-400">Loading more results...</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* End of results indicator */}
-                {!hasMore && offers.length > 0 && (
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full text-gray-400 text-sm end-of-results">
-                      <span>🎉</span>
-                      <span>You've seen all results!</span>
-                    </div>
-                  </div>
-                )}
-              </>
+          {/* Search Stats */}
+          <div className="mb-6 text-sm text-gray-600">
+            {query && (
+              <p>
+                Showing {searchStats.filtered} results for <strong>"{query}"</strong>
+                {searchStats.total > 0 && ` (${searchStats.total} total items)`}
+              </p>
             )}
           </div>
-        </section>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Searching...</p>
+            </div>
+          )}
+
+          {/* Results Grid */}
+          {!loading && (
+            <>
+              {results.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {results.map((result, index) => renderSearchResult(result, index))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
+                  <p className="text-gray-600 mb-4">
+                    {query ? `No results found for "${query}". Try different keywords or filters.` : 'Enter a search term to get started.'}
+                  </p>
+                  {query && (
+                    <button
+                      onClick={clearFilters}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Clear Search
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Load More Trigger */}
+              {hasMore && results.length > 0 && (
+                <div ref={observerRef} className="py-8 text-center">
+                  {isLoadingMore ? (
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  ) : (
+                    <button
+                      onClick={loadMore}
+                      className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Load More Results
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </>
   );
@@ -436,32 +486,46 @@ function debounce<T extends (...args: any[]) => any>(
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   try {
-    const searchQuery = (query.q as string) || '';
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    
-    // Fetch initial offers and categories
-    const [offersResponse, categoriesResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/search-v2?q=${encodeURIComponent(searchQuery)}&limit=${ITEMS_PER_PAGE}`),
-      fetch(`${baseUrl}/api/categories`)
-    ]);
+    const searchQuery = query.q as string || '';
+    const results: SearchResult[] = [];
+    let totalCount = 0;
 
-    const offersData = offersResponse.ok ? await offersResponse.json() : { offers: [], totalCount: 0 };
-    const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : [];
+    // Get categories for filter
+    const categories = ['Technology', 'Gaming', 'Productivity', 'Security', 'Design', 'Development'];
+
+    // If there's a search query, perform initial search
+    if (searchQuery) {
+      const searchParams = new URLSearchParams({
+        q: searchQuery,
+        limit: ITEMS_PER_PAGE.toString()
+      });
+
+      try {
+        const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/search-v2?${searchParams}`);
+        if (response.ok) {
+          const data = await response.json();
+          results.push(...(data.results || []));
+          totalCount = data.pagination?.total || 0;
+        }
+      } catch (error) {
+        console.error('Search API error:', error);
+      }
+    }
 
     return {
       props: {
         initialQuery: searchQuery,
-        initialOffers: offersData.offers || [],
-        categories: categoriesData.map((cat: any) => cat.name) || [],
-        totalCount: offersData.totalCount || 0
+        initialResults: results,
+        categories,
+        totalCount
       }
     };
   } catch (error) {
-    console.error('Error in getServerSideProps:', error);
+    console.error('Search page error:', error);
     return {
       props: {
         initialQuery: '',
-        initialOffers: [],
+        initialResults: [],
         categories: [],
         totalCount: 0
       }

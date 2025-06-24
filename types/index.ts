@@ -64,4 +64,20 @@ export interface Offer {
   rating?: number;
   gallery?: string[];
   showInDashboard?: boolean;
+}
+
+export interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  image: string;
+  author: string;
+  category: 'Android Games' | 'Android Apps' | 'iOS Software' | 'How-to' | 'Reviews' | 'News';
+  tags: string[];
+  published: boolean;
+  views: number;
+  createdAt: string;
+  updatedAt: string;
 } 
