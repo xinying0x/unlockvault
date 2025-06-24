@@ -2,29 +2,133 @@
   {
     "id": "operating-systems",
     "name": "Operating Systems",
-    "image": "/images/categories/os.jpg",
+    "slug": "operating-systems",
     "description": "Windows, macOS, and Linux operating systems",
+    "icon": "💻",
+    "color": "from-blue-500 to-cyan-600",
+    "type": "offer",
+    "image": "/images/categories/os.jpg",
     "href": "/category/operating-systems"
   },
   {
     "id": "productivity",
     "name": "Productivity",
-    "image": "/images/categories/productivity.jpg",
+    "slug": "productivity",
     "description": "Office suites and productivity tools",
+    "icon": "📊",
+    "color": "from-green-500 to-emerald-600",
+    "type": "both",
+    "image": "/images/categories/productivity.jpg",
     "href": "/category/productivity"
   },
   {
     "id": "security",
     "name": "Security",
-    "image": "/images/categories/security.jpg",
+    "slug": "security",
     "description": "Antivirus and security software",
+    "icon": "🛡️",
+    "color": "from-red-500 to-pink-600",
+    "type": "both",
+    "image": "/images/categories/security.jpg",
     "href": "/category/security"
   },
   {
     "id": "multimedia",
     "name": "Multimedia",
-    "image": "/images/categories/multimedia.jpg",
+    "slug": "multimedia",
     "description": "Video, audio, and image editing tools",
+    "icon": "🎨",
+    "color": "from-purple-500 to-indigo-600",
+    "type": "offer",
+    "image": "/images/categories/multimedia.jpg",
     "href": "/category/multimedia"
+  },
+  {
+    "id": "games",
+    "name": "Games",
+    "slug": "games",
+    "description": "Gaming software and entertainment",
+    "icon": "🎮",
+    "color": "from-orange-500 to-red-600",
+    "type": "offer",
+    "image": "/images/categories/games.jpg",
+    "href": "/category/games"
+  },
+  {
+    "id": "developer-tools",
+    "name": "Developer Tools",
+    "slug": "developer-tools",
+    "description": "Programming and development software",
+    "icon": "⚙️",
+    "color": "from-gray-500 to-slate-600",
+    "type": "both",
+    "image": "/images/categories/dev-tools.jpg",
+    "href": "/category/developer-tools"
+  },
+  {
+    "id": "tutorials",
+    "name": "Tutorials",
+    "slug": "tutorials",
+    "description": "Step-by-step guides and how-to articles",
+    "icon": "📚",
+    "color": "from-yellow-500 to-orange-600",
+    "type": "article",
+    "image": "/images/categories/tutorials.jpg",
+    "href": "/category/tutorials"
+  },
+  {
+    "id": "tips-tricks",
+    "name": "Tips & Tricks",
+    "slug": "tips-tricks",
+    "description": "Quick tips and useful tricks",
+    "icon": "💡",
+    "color": "from-cyan-500 to-blue-600",
+    "type": "article",
+    "image": "/images/categories/tips.jpg",
+    "href": "/category/tips-tricks"
+  },
+  {
+    "id": "reviews",
+    "name": "Reviews",
+    "slug": "reviews",
+    "description": "Software reviews and comparisons",
+    "icon": "⭐",
+    "color": "from-violet-500 to-purple-600",
+    "type": "article",
+    "image": "/images/categories/reviews.jpg",
+    "href": "/category/reviews"
+  },
+  {
+    "id": "news",
+    "name": "Tech News",
+    "slug": "news",
+    "description": "Latest technology news and updates",
+    "icon": "📰",
+    "color": "from-emerald-500 to-teal-600",
+    "type": "article",
+    "image": "/images/categories/news.jpg",
+    "href": "/category/news"
+  },
+  {
+    "id": "mobile-apps",
+    "name": "Mobile Apps",
+    "slug": "mobile-apps",
+    "description": "Android and iOS applications",
+    "icon": "📱",
+    "color": "from-pink-500 to-rose-600",
+    "type": "both",
+    "image": "/images/categories/mobile.jpg",
+    "href": "/category/mobile-apps"
+  },
+  {
+    "id": "web-tools",
+    "name": "Web Tools",
+    "slug": "web-tools",
+    "description": "Online tools and web applications",
+    "icon": "🌐",
+    "color": "from-indigo-500 to-blue-600",
+    "type": "both",
+    "image": "/images/categories/web-tools.jpg",
+    "href": "/category/web-tools"
   }
 ]

@@ -1,36 +1,122 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '../../lib/mongodb';
+import { connectToDatabase } from '../../lib/mongodb';
+import fs from 'fs';
+import path from 'path';
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  type: 'article' | 'offer' | 'both';
+  count: number;
+  slug: string;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
+
   try {
-    const client = await clientPromise;
-    const db = client.db('unlockvault');
-    const collection = db.collection('categories');
+    const { type = 'all' } = req.query;
+    
+    // Try MongoDB first
+    try {
+      const { db } = await connectToDatabase();
+      
+      // Get categories from database
+      const [articles, offers, categories] = await Promise.all([
+        db.collection('articles').find({}).toArray(),
+        db.collection('offers').find({}).toArray(),
+        db.collection('categories').find({}).toArray()
+      ]);
 
-    switch (req.method) {
-      case 'GET':
-        const categories = await collection.find({}).toArray();
-        // Remove MongoDB _id from response
-        const cleanCategories = categories.map(({ _id, ...category }) => category);
-        res.status(200).json(cleanCategories);
-        break;
+      // Count articles and offers by category
+      const articleCounts: { [key: string]: number } = {};
+      const offerCounts: { [key: string]: number } = {};
 
-      default:
-        res.setHeader('Allow', ['GET']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+      articles.forEach(article => {
+        if (article.category) {
+          articleCounts[article.category] = (articleCounts[article.category] || 0) + 1;
+        }
+      });
+
+      offers.forEach(offer => {
+        if (offer.category) {
+          offerCounts[offer.category] = (offerCounts[offer.category] || 0) + 1;
+        }
+      });
+
+      // Merge counts with category data
+      const enrichedCategories = categories.map((cat: any) => ({
+        ...cat,
+        count: (articleCounts[cat.name] || 0) + (offerCounts[cat.name] || 0),
+        articleCount: articleCounts[cat.name] || 0,
+        offerCount: offerCounts[cat.name] || 0
+      }));
+
+      // Filter by type if specified
+      let filteredCategories = enrichedCategories;
+      if (type === 'articles') {
+        filteredCategories = enrichedCategories.filter((cat: any) => cat.type === 'article' || cat.type === 'both');
+      } else if (type === 'offers') {
+        filteredCategories = enrichedCategories.filter((cat: any) => cat.type === 'offer' || cat.type === 'both');
+      }
+
+      res.status(200).json(filteredCategories);
+    } catch (dbError) {
+      console.error('MongoDB error, falling back to JSON:', dbError);
+      
+      // Fallback to JSON files
+      const [categoriesData, articlesData, offersData] = await Promise.all([
+        fs.promises.readFile(path.join(process.cwd(), 'data', 'categories.json'), 'utf8'),
+        fs.promises.readFile(path.join(process.cwd(), 'data', 'articles.json'), 'utf8'),
+        fs.promises.readFile(path.join(process.cwd(), 'data', 'offers.json'), 'utf8')
+      ]);
+
+      const categories = JSON.parse(categoriesData);
+      const articles = JSON.parse(articlesData);
+      const offers = JSON.parse(offersData);
+
+      // Count articles and offers by category
+      const articleCounts: { [key: string]: number } = {};
+      const offerCounts: { [key: string]: number } = {};
+
+      articles.forEach((article: any) => {
+        if (article.category) {
+          articleCounts[article.category] = (articleCounts[article.category] || 0) + 1;
+        }
+      });
+
+      offers.forEach((offer: any) => {
+        if (offer.category) {
+          offerCounts[offer.category] = (offerCounts[offer.category] || 0) + 1;
+        }
+      });
+
+      // Merge counts with category data
+      const enrichedCategories = categories.map((cat: any) => ({
+        ...cat,
+        count: (articleCounts[cat.name] || 0) + (offerCounts[cat.name] || 0),
+        articleCount: articleCounts[cat.name] || 0,
+        offerCount: offerCounts[cat.name] || 0
+      }));
+
+      // Filter by type if specified
+      let filteredCategories = enrichedCategories;
+      if (type === 'articles') {
+        filteredCategories = enrichedCategories.filter((cat: any) => cat.type === 'article' || cat.type === 'both');
+      } else if (type === 'offers') {
+        filteredCategories = enrichedCategories.filter((cat: any) => cat.type === 'offer' || cat.type === 'both');
+      }
+
+      res.status(200).json(filteredCategories);
     }
   } catch (error) {
-    console.error('Database error:', error);
-    
-    // Fallback to dummy categories when MongoDB is not available
-    const dummyCategories = [
-      { name: 'Design', description: 'Design and creative tools' },
-      { name: 'Productivity', description: 'Office and productivity software' },
-      { name: 'Games', description: 'Gaming software and tools' },
-      { name: 'Developer Tools', description: 'Programming and development tools' },
-      { name: 'Security', description: 'Security and privacy tools' }
-    ];
-
-    res.status(200).json(dummyCategories);
+    console.error('Categories API error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 } 

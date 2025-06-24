@@ -22,6 +22,287 @@ export interface OrganizationStructuredData {
   socialMedia: string[];
 }
 
+export interface StructuredDataProps {
+  type: 'website' | 'article' | 'product' | 'organization' | 'breadcrumb' | 'faq' | 'review';
+  data: any;
+}
+
+export const generateStructuredData = (props: StructuredDataProps) => {
+  const { type, data } = props;
+  
+  const baseUrl = 'https://unlockvault.xyz';
+  
+  switch (type) {
+    case 'website':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'UnlockVault - Premium Software & Digital Tools',
+        description: 'Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools.',
+        url: baseUrl,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${baseUrl}/search?q={search_term_string}`
+          },
+          'query-input': 'required name=search_term_string'
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'UnlockVault',
+          url: baseUrl,
+          logo: {
+            '@type': 'ImageObject',
+            url: `${baseUrl}/logo.svg`,
+            width: 512,
+            height: 512
+          },
+          sameAs: [
+            'https://twitter.com/UnlockVault',
+            'https://facebook.com/UnlockVault',
+            'https://instagram.com/UnlockVault',
+            'https://youtube.com/@UnlockVault',
+            'https://tiktok.com/@UnlockVault'
+          ]
+        }
+      };
+
+    case 'article':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: data.title,
+        description: data.summary,
+        image: {
+          '@type': 'ImageObject',
+          url: data.image,
+          width: 1200,
+          height: 630
+        },
+        author: {
+          '@type': 'Person',
+          name: data.author,
+          url: `${baseUrl}/authors/${data.author.toLowerCase().replace(/\s+/g, '-')}`
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'UnlockVault',
+          logo: {
+            '@type': 'ImageObject',
+            url: `${baseUrl}/logo.svg`,
+            width: 512,
+            height: 512
+          }
+        },
+        datePublished: data.createdAt,
+        dateModified: data.lastModified || data.createdAt,
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `${baseUrl}/articles/${data.slug}`
+        },
+        articleSection: data.category,
+        keywords: data.tags.join(', '),
+        wordCount: data.content ? data.content.replace(/<[^>]*>/g, '').split(/\s+/).length : 0,
+        inLanguage: 'en-US',
+        isAccessibleForFree: true,
+        genre: 'Technology',
+        about: {
+          '@type': 'Thing',
+          name: data.category
+        }
+      };
+
+    case 'product':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: data.title,
+        description: data.description,
+        image: data.image,
+        applicationCategory: data.category,
+        operatingSystem: data.platform || 'Windows, macOS, Linux',
+        softwareVersion: data.version || 'Latest',
+        datePublished: data.createdAt,
+        dateModified: data.lastModified || data.createdAt,
+        author: {
+          '@type': 'Organization',
+          name: 'UnlockVault'
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'UnlockVault',
+          logo: {
+            '@type': 'ImageObject',
+            url: `${baseUrl}/logo.svg`
+          }
+        },
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          availability: 'https://schema.org/InStock',
+          validFrom: data.createdAt
+        },
+        aggregateRating: data.rating ? {
+          '@type': 'AggregateRating',
+          ratingValue: data.rating,
+          ratingCount: data.reviewCount || 1,
+          bestRating: 5,
+          worstRating: 1
+        } : undefined,
+        downloadUrl: data.downloadUrl,
+        fileSize: data.fileSize,
+        requirements: data.requirements || 'Compatible with modern operating systems',
+        screenshot: data.screenshots ? data.screenshots.map((screenshot: string) => ({
+          '@type': 'ImageObject',
+          url: screenshot
+        })) : undefined
+      };
+
+    case 'organization':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'UnlockVault',
+        description: 'Premium software, games, applications, and digital tools provider',
+        url: baseUrl,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${baseUrl}/logo.svg`,
+          width: 512,
+          height: 512
+        },
+        foundingDate: '2024',
+        sameAs: [
+          'https://twitter.com/UnlockVault',
+          'https://facebook.com/UnlockVault',
+          'https://instagram.com/UnlockVault',
+          'https://youtube.com/@UnlockVault',
+          'https://tiktok.com/@UnlockVault'
+        ],
+        address: {
+          '@type': 'PostalAddress',
+          addressCountry: 'US'
+        },
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'Customer Service',
+          email: 'support@unlockvault.xyz',
+          availableLanguage: 'English'
+        },
+        knowsAbout: [
+          'Software Development',
+          'Digital Tools',
+          'Gaming',
+          'Productivity Applications',
+          'Technology Solutions'
+        ]
+      };
+
+    case 'breadcrumb':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: data.map((item: any, index: number) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          item: `${baseUrl}${item.url}`
+        }))
+      };
+
+    case 'faq':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: data.map((faq: any) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer
+          }
+        }))
+      };
+
+    case 'review':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'Review',
+        itemReviewed: {
+          '@type': 'SoftwareApplication',
+          name: data.productName
+        },
+        author: {
+          '@type': 'Person',
+          name: data.author
+        },
+        reviewRating: {
+          '@type': 'Rating',
+          ratingValue: data.rating,
+          bestRating: 5,
+          worstRating: 1
+        },
+        reviewBody: data.content,
+        datePublished: data.date
+      };
+
+    default:
+      return null;
+  }
+};
+
+// Website-wide structured data
+export const getWebsiteStructuredData = () => {
+  return generateStructuredData({
+    type: 'website',
+    data: {}
+  });
+};
+
+// Organization structured data
+export const getOrganizationStructuredData = () => {
+  return generateStructuredData({
+    type: 'organization',
+    data: {}
+  });
+};
+
+// Breadcrumb helper
+export const getBreadcrumbStructuredData = (breadcrumbs: Array<{name: string, url: string}>) => {
+  return generateStructuredData({
+    type: 'breadcrumb',
+    data: breadcrumbs
+  });
+};
+
+// FAQ helper
+export const getFAQStructuredData = (faqs: Array<{question: string, answer: string}>) => {
+  return generateStructuredData({
+    type: 'faq',
+    data: faqs
+  });
+};
+
+// Helper function to inject structured data into page
+export const injectStructuredData = (data: any) => {
+  if (typeof window !== 'undefined') {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(data);
+    document.head.appendChild(script);
+  }
+};
+
+// Common structured data for the homepage
+export const getHomepageStructuredData = () => {
+  const websiteData = getWebsiteStructuredData();
+  const organizationData = getOrganizationStructuredData();
+  
+  return [websiteData, organizationData];
+};
+
 // Generate JSON-LD for Organization
 export const generateOrganizationSchema = (baseUrl: string): any => ({
   "@context": "https://schema.org",
@@ -244,9 +525,4 @@ export const generateReviewSchema = (testimonials: any[], baseUrl: string): any 
     "reviewBody": testimonial.text,
     "datePublished": testimonial.createdAt
   }))
-});
-
-// Helper function to inject structured data into HTML head
-export const injectStructuredData = (data: any): string => {
-  return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`;
-}; 
+}); 

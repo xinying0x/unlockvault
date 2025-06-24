@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file redirects to the dynamic RSS feed -->
+<!-- The actual RSS feed is generated at /api/rss -->
+<rss version="2.0">
+  <channel>
+    <title>UnlockVault RSS Feed</title>
+    <description>This RSS feed has moved to /api/rss</description>
+    <link>https://unlockvault.xyz/api/rss</link>
+  </channel>
+</rss> 

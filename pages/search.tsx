@@ -490,8 +490,19 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     const results: SearchResult[] = [];
     let totalCount = 0;
 
-    // Get categories for filter
-    const categories = ['Technology', 'Gaming', 'Productivity', 'Security', 'Design', 'Development'];
+    // Get categories for filter from API
+    let categories: string[] = [];
+    try {
+      const categoriesResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/categories`);
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        categories = categoriesData.map((cat: any) => cat.name);
+      }
+    } catch (error) {
+      console.error('Categories API error:', error);
+      // Fallback categories
+      categories = ['Technology', 'Gaming', 'Productivity', 'Security', 'Design', 'Development'];
+    }
 
     // If there's a search query, perform initial search
     if (searchQuery) {

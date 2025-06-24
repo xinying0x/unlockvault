@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import SEOHead from '../components/SEOHead';
 import UnlockCard from '../components/UnlockCard';
 import { initGA, trackPageView, trackTrafficSource } from '../lib/analytics';
 import { advancedBotDetection } from '../lib/botProtection';
+import { getHomepageStructuredData } from '../lib/structuredData';
 
 interface Offer {
   id: string;
@@ -107,10 +109,54 @@ const HomePage: React.FC = () => {
     );
   }
 
+  // Generate structured data
+  const structuredDataList = getHomepageStructuredData();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white">
-      <SEOHead />
-      
+    <>
+      <Head>
+        <title>UnlockVault - Premium Software, Games, Apps & Digital Tools</title>
+        <meta name="description" content="Discover and download premium software, games, applications, and digital tools for free. Your trusted source for professional software, gaming, and productivity solutions." />
+        <meta name="keywords" content="premium software, free games download, applications, digital tools, productivity software, development tools, creative software, gaming software, tech tools, software solutions" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <link rel="canonical" href="https://unlockvault.xyz" />
+        
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="UnlockVault - Premium Software & Digital Tools" />
+        <meta property="og:description" content="Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools." />
+        <meta property="og:url" content="https://unlockvault.xyz" />
+        <meta property="og:site_name" content="UnlockVault" />
+        <meta property="og:image" content="https://unlockvault.xyz/images/og-image.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="UnlockVault - Premium Software & Digital Tools" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@UnlockVault" />
+        <meta name="twitter:creator" content="@UnlockVault" />
+        <meta name="twitter:title" content="UnlockVault - Premium Software & Digital Tools" />
+        <meta name="twitter:description" content="Discover premium software, games, applications, and digital tools. Your gateway to unlimited possibilities." />
+        <meta name="twitter:image" content="https://unlockvault.xyz/images/og-image.jpg" />
+        
+        {/* Structured Data */}
+        {structuredDataList.map((data, index) => (
+          <script
+            key={index}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+          />
+        ))}
+        
+        {/* Additional SEO */}
+        <meta name="theme-color" content="#8B5CF6" />
+        <meta name="msapplication-TileColor" content="#8B5CF6" />
+        <link rel="alternate" type="application/rss+xml" title="UnlockVault RSS Feed" href="https://unlockvault.xyz/rss.xml" />
+      </Head>
+
+      <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white">
+
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
@@ -223,7 +269,7 @@ const HomePage: React.FC = () => {
           {latestApps.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
               {latestApps.map((app) => (
-                <UnlockCard 
+                    <UnlockCard
                   key={app.id} 
                   image={app.image}
                   title={app.title}
@@ -238,21 +284,21 @@ const HomePage: React.FC = () => {
                   offerSlug={app.slug}
                   type={app.type}
                   addedAt={app.addedAt}
-                />
-              ))}
-            </div>
+                    />
+                ))}
+                  </div>
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📱</div>
               <p className="text-gray-400">No apps available at the moment</p>
-            </div>
+              </div>
             )}
             
           <div className="text-center">
                 <Link 
               href="/apps"
               className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
-            >
+                >
               View All Apps
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -341,7 +387,7 @@ const HomePage: React.FC = () => {
                       src={article.image}
                       alt={article.title}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
+                        />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div className="absolute top-4 left-4">
                       <span className="bg-blue-600/90 text-white px-2 py-1 rounded-full text-xs font-medium">
@@ -422,6 +468,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

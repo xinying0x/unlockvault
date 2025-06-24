@@ -1,8 +1,17 @@
 # *
 User-agent: *
 Allow: /
-Disallow: /admin-xyz123/*
-Disallow: /api/*
+Disallow: /admin-xyz123/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /404
+Disallow: /_error
+
+# Googlebot
+User-agent: Googlebot
+Allow: /
+Disallow: /admin-xyz123/
+Disallow: /api/
 
 # Host
 Host: https://unlockvault.xyz

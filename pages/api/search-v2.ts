@@ -124,8 +124,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Search articles if type is not specified or is 'article'
     if (!type || type === 'article' || type === 'all') {
       const articleFilter: any = { published: true };
-      
-      if (category && category !== 'all') {
+
+    if (category && category !== 'all') {
         articleFilter.category = new RegExp(category as string, 'i');
       }
 

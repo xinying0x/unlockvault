@@ -3,17 +3,39 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Article } from '../types';
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  color: string;
+  type: 'article' | 'offer' | 'both';
+  count: number;
+  articleCount?: number;
+  offerCount?: number;
+}
+
 const ArticlesPage = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
 
-  const categories = ['All', 'Android Games', 'Android Apps', 'iOS Software', 'How-to', 'Reviews', 'News'];
-
   useEffect(() => {
     fetchArticles();
+    fetchCategories();
+  }, []);
+
+  // Handle URL parameters for category filtering
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryParam = urlParams.get('category');
+    if (categoryParam && categoryParam !== selectedCategory) {
+      setSelectedCategory(categoryParam);
+    }
   }, []);
 
   useEffect(() => {
@@ -32,11 +54,32 @@ const ArticlesPage = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories?type=articles');
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   const filterArticles = () => {
     let filtered = articles.filter(article => article.published);
 
     if (selectedCategory !== 'All') {
-      filtered = filtered.filter(article => article.category === selectedCategory);
+      // Check if category is selected by name or slug
+      const selectedCat = categories.find(cat => cat.name === selectedCategory || cat.slug === selectedCategory);
+      if (selectedCat) {
+        filtered = filtered.filter(article => 
+          article.category === selectedCat.name || 
+          article.category === selectedCat.slug ||
+          article.category.toLowerCase() === selectedCat.name.toLowerCase()
+        );
+      } else {
+        // Fallback to direct name matching
+        filtered = filtered.filter(article => article.category === selectedCategory);
+      }
     }
 
     if (searchQuery) {
@@ -105,18 +148,38 @@ const ArticlesPage = () => {
           </div>
 
           {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-3">
+            {/* All Categories Button */}
+            <button
+              onClick={() => setSelectedCategory('All')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                selectedCategory === 'All'
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                  : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white'
+              }`}
+            >
+              <span>🌟</span>
+              <span>All Articles</span>
+            </button>
+
+            {/* Dynamic Categories */}
             {categories.map((category) => (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  selectedCategory === category
-                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  selectedCategory === category.name
+                    ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
                     : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white'
                 }`}
               >
-                {category}
+                <span>{category.icon}</span>
+                <span>{category.name}</span>
+                {category.articleCount !== undefined && category.articleCount > 0 && (
+                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
+                    {category.articleCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
