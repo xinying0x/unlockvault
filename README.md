@@ -1,334 +1,317 @@
-# 🚀 UnlockVault - Premium Tools & Apps Platform
+# 🔓 UnlockVault - Premium Software & Digital Tools Platform
 
-A modern, feature-rich platform for sharing premium tools, apps, games, and educational articles. Built with Next.js, MongoDB, and Tailwind CSS.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://bitbucket.org/unlockvault/unlockvault)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.4-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC)](https://tailwindcss.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0-green)](https://www.mongodb.com/)
 
-## ✨ Features
+> **Discover premium software, games, applications, and digital tools. Your trusted source for professional software, gaming, and productivity solutions.**
 
-### 🎯 Core Features
-- **Premium Content Sharing**: Tools, apps, games, and articles
-- **Advanced Search**: Smart search with relevance scoring
-- **Admin Dashboard**: Complete content management system
-- **Blog System**: Full-featured article management
-- **Analytics**: Detailed visitor and usage analytics
-- **Security**: Bot protection, rate limiting, and authentication
+## ✨ **Latest Major Enhancement (v2.0)**
 
-### 🔧 Technical Features
-- **MongoDB Integration**: With JSON fallback system
-- **SEO Optimized**: Complete SEO setup with structured data
-- **Responsive Design**: Mobile-first approach
-- **Performance Optimized**: Image optimization and caching
-- **TypeScript**: Full type safety
-- **Modern UI**: Tailwind CSS with custom components
+### 🎨 **Premium Article Details Page**
+- **Advanced UI/UX**: Reading progress bar, floating back button, smooth animations
+- **Social Media Integration**: Facebook, X (Twitter), Instagram, TikTok, YouTube sharing
+- **Enhanced Content Processing**: LTR support, rich typography, interactive elements
+- **Responsive Design**: Mobile-first approach with touch-optimized interactions
 
-## 🛠️ Tech Stack
+### 🔍 **Complete SEO Optimization**
+- **Structured Data**: Comprehensive schema markup for articles, products, organization
+- **Meta Tags**: Open Graph, Twitter Cards, comprehensive search engine optimization
+- **Sitemap Generation**: Dynamic sitemap with proper priorities and frequencies
+- **RSS Feed**: Full content syndication with articles and offers
+- **Performance**: Optimized Core Web Vitals and loading speeds
 
-- **Frontend**: Next.js 15, React 18, TypeScript
-- **Backend**: Next.js API Routes, MongoDB
-- **Styling**: Tailwind CSS, Custom Components
-- **Authentication**: JWT-based admin system
-- **Analytics**: Custom analytics system
-- **Deployment**: Vercel, Railway, VPS compatible
+## 🚀 **Features**
 
-## 📦 Installation
+### 📄 **Content Management**
+- **Articles & Blog System**: Full CRUD operations with rich text editor
+- **Software Offers**: Games, applications, and professional tools
+- **Category Management**: Dynamic categorization with filtering
+- **Search & Discovery**: Advanced search with relevance scoring
 
-### Prerequisites
+### 🛠️ **Technical Features**
+- **MongoDB Integration**: Scalable database with fallback to JSON files
+- **Admin Dashboard**: Complete content management interface
+- **User Analytics**: Visit tracking and engagement metrics
+- **Security**: Bot protection, rate limiting, secure authentication
+
+### 🎯 **User Experience**
+- **Responsive Design**: Works perfectly on all devices
+- **Progressive Web App**: Installable with offline capabilities
+- **Fast Loading**: Optimized assets and caching strategies
+- **Accessibility**: WCAG compliant with proper ARIA labels
+
+## 📁 **Project Structure**
+
+```
+unlockvault/
+├── 📁 components/           # Reusable React components
+│   ├── AdminLayout.tsx      # Admin dashboard layout
+│   ├── Navbar.tsx          # Navigation component
+│   ├── UnlockCard.tsx      # Content card component
+│   └── ...
+├── 📁 pages/               # Next.js pages and API routes
+│   ├── 📁 api/            # API endpoints
+│   │   ├── articles/       # Articles API
+│   │   ├── offers/         # Offers API
+│   │   ├── categories.ts   # Categories API
+│   │   ├── search-v2.ts    # Enhanced search API
+│   │   └── rss.ts          # RSS feed generator
+│   ├── 📁 articles/        # Article pages
+│   ├── 📁 admin-xyz123/    # Admin dashboard
+│   ├── index.tsx           # Homepage
+│   └── ...
+├── 📁 lib/                 # Utility libraries
+│   ├── mongodb.ts          # Database connection
+│   ├── structuredData.ts   # SEO schema markup
+│   ├── analytics.ts        # User analytics
+│   └── ...
+├── 📁 data/                # JSON data files
+│   ├── articles.json       # Sample articles
+│   ├── offers.json         # Software offers
+│   ├── categories.json     # Content categories
+│   └── ...
+└── 📁 scripts/             # Utility scripts
+    ├── migrate-to-mongodb.js # Database migration
+    └── seed-articles.js     # Sample data seeding
+```
+
+## 🛠️ **Installation & Setup**
+
+### **Prerequisites**
 - Node.js 18+ 
-- MongoDB (optional - JSON fallback available)
+- MongoDB 6.0+ (optional - falls back to JSON files)
 - Git
 
-### Quick Start
+### **Quick Start**
 
-1. **Clone the repository**
 ```bash
-git clone https://github.com/your-username/unlockvault.git
+# Clone the repository
+git clone https://bitbucket.org/unlockvault/unlockvault.git
 cd unlockvault
-```
 
-2. **Install dependencies**
-```bash
+# Install dependencies
 npm install
-# or
-yarn install
-```
 
-3. **Environment Setup**
-```bash
+# Setup environment variables
 cp .env.example .env.local
-```
+# Edit .env.local with your configuration
 
-4. **Configure Environment Variables**
-```env
-# Database
-MONGODB_URI=mongodb://localhost:27017/unlockvault
-MONGODB_DB=unlockvault
+# Setup database (optional)
+npm run setup-db
 
-# Admin Auth
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your_secure_password
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
-
-# Site
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_NAME=UnlockVault
-```
-
-5. **Database Setup (Optional)**
-```bash
-# If using MongoDB
-npm run migrate
-
-# Or use JSON fallback (no setup needed)
-```
-
-6. **Start Development Server**
-```bash
+# Start development server
 npm run dev
 ```
 
-Visit `http://localhost:3000` to see the application.
+### **Environment Variables**
 
-## 🗄️ Database Setup
+Create a `.env.local` file in the root directory:
 
-### MongoDB Setup
-1. **Install MongoDB locally** or use **MongoDB Atlas**
-2. **Run migration script**:
-```bash
-npm run migrate
+```env
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/unlockvault
+MONGODB_DB=unlockvault
+
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key-here
+ADMIN_PASSWORD=your-secure-admin-password
+
+# External APIs (optional)
+GOOGLE_ANALYTICS_ID=GA_MEASUREMENT_ID
+NEXT_PUBLIC_SITE_URL=https://unlockvault.xyz
+
+# Security
+RATE_LIMIT_MAX=100
+BOT_PROTECTION_ENABLED=true
 ```
 
-### JSON Fallback
-The system automatically falls back to JSON files if MongoDB is unavailable:
-- `data/offers.json` - Offers/tools data
-- `data/articles.json` - Blog articles
-- `data/categories.json` - Categories
-- `data/settings.json` - Site settings
+## 📊 **Available Scripts**
 
-## 🚀 Deployment
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run migrate` | Migrate data to MongoDB |
+| `npm run setup-db` | Setup database with sample data |
 
-### Vercel Deployment
-1. **Connect to Vercel**
+## 🚀 **Deployment**
+
+### **Vercel (Recommended)**
+
 ```bash
-npm i -g vercel
-vercel
-```
+# Install Vercel CLI
+npm install -g vercel
 
-2. **Set Environment Variables** in Vercel dashboard
-3. **Deploy**
-```bash
+# Deploy
 vercel --prod
 ```
 
-### Railway Deployment
-1. **Connect to Railway**
+### **VPS/Server Deployment**
+
 ```bash
+# Build the project
+npm run build
+
+# Install PM2 for process management
+npm install -g pm2
+
+# Start the application
+pm2 start npm --name "unlockvault" -- start
+
+# Setup reverse proxy (Nginx)
+# Configure SSL certificate
+# Setup MongoDB connection
+```
+
+### **Railway**
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login and deploy
 railway login
-railway init
-```
-
-2. **Set Environment Variables**
-```bash
-railway variables:set MONGODB_URI=your_mongodb_uri
-railway variables:set ADMIN_PASSWORD=your_password
-```
-
-3. **Deploy**
-```bash
 railway up
 ```
 
-### VPS/Docker Deployment
+## 📈 **SEO Features**
+
+### **Structured Data**
+- Article schema markup
+- Product/Software schema
+- Organization schema
+- Breadcrumb navigation
+- FAQ schema support
+
+### **Meta Tags**
+- Open Graph for social sharing
+- Twitter Cards optimization
+- Canonical URLs
+- Mobile-friendly viewport
+- Theme color configuration
+
+### **Performance**
+- Next.js automatic optimization
+- Image optimization
+- Static generation where possible
+- Caching strategies
+- Core Web Vitals optimization
+
+## 🔧 **API Documentation**
+
+### **Articles API**
 ```bash
-# Build the application
-npm run build
-
-# Start production server
-npm start
-
-# Or use Docker
-docker build -t unlockvault .
-docker run -p 3000:3000 unlockvault
+GET /api/articles              # Get all articles
+GET /api/articles/[slug]       # Get article by slug
+POST /api/articles             # Create new article (admin)
+PUT /api/articles/[slug]       # Update article (admin)
+DELETE /api/articles/[slug]    # Delete article (admin)
 ```
 
-### Bitbucket Pipelines
-The project includes automated deployment via Bitbucket Pipelines:
-```yaml
-# See bitbucket-pipelines.yml for full configuration
+### **Search API**
+```bash
+GET /api/search-v2?q=query&type=all&category=tech&sort=relevance
 ```
 
-## 🎛️ Admin Panel
-
-Access the admin panel at `/admin-xyz123` with your configured credentials.
-
-### Admin Features
-- **Dashboard**: Analytics and overview
-- **Content Management**: Add/edit/delete offers
-- **Blog Management**: Full article CRUD
-- **User Analytics**: Visitor tracking
-- **Security Settings**: Password changes
-- **Site Settings**: Configuration management
-
-## 📊 API Endpoints
-
-### Public APIs
-- `GET /api/offers` - Get all offers
-- `GET /api/offers/[id]` - Get specific offer
-- `GET /api/articles` - Get all articles
-- `GET /api/articles/[slug]` - Get specific article
-- `GET /api/search-v2` - Search offers and articles
-
-### Admin APIs
-- `POST /api/auth/login` - Admin login
-- `POST/PUT/DELETE /api/offers` - Manage offers
-- `POST/PUT/DELETE /api/articles` - Manage articles
-- `GET /api/analytics` - Get analytics data
-
-## 🔧 Configuration
-
-### Site Settings
-Edit `data/settings.json` or use the admin panel:
-```json
-{
-  "siteName": "UnlockVault",
-  "siteDescription": "Premium tools and apps platform",
-  "siteUrl": "https://unlockvault.xyz",
-  "adminEmail": "admin@unlockvault.xyz"
-}
+### **RSS Feed**
+```bash
+GET /api/rss                   # Get RSS feed with latest content
 ```
 
-### SEO Configuration
-The site includes comprehensive SEO setup:
-- Meta tags optimization
-- Structured data (JSON-LD)
-- Sitemap generation
-- Open Graph tags
-- Twitter Cards
+## 🎨 **Customization**
 
-## 🛡️ Security Features
+### **Styling**
+- Built with Tailwind CSS
+- Custom design system in `styles/globals.css`
+- Responsive breakpoints configured
+- Dark theme optimized
 
-- **Bot Protection**: Automated bot detection
-- **Rate Limiting**: API rate limiting
-- **Input Sanitization**: XSS protection
-- **JWT Authentication**: Secure admin sessions
-- **CORS Protection**: Cross-origin request security
+### **Content**
+- Edit content in `data/` directory
+- Customize categories in `data/categories.json`
+- Update site configuration in `next-seo.config.js`
 
-## 📈 Analytics
+## 🔐 **Security Features**
 
-The platform includes built-in analytics:
-- Page views and unique visitors
-- Offer unlock tracking
-- Geographic data
-- Device and browser stats
-- Traffic source analysis
+- **Bot Protection**: Advanced bot detection and prevention
+- **Rate Limiting**: API rate limiting to prevent abuse
+- **Input Validation**: Server-side validation for all inputs
+- **XSS Protection**: Content sanitization and CSP headers
+- **CSRF Protection**: Token-based request validation
 
-## 🎨 Customization
+## 📱 **Progressive Web App**
 
-### Themes
-Modify `tailwind.config.js` for custom styling:
-```javascript
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        primary: '#8B5CF6',
-        secondary: '#06B6D4'
-      }
-    }
-  }
-}
+- **Installable**: Can be installed on mobile devices
+- **Offline Support**: Basic offline functionality
+- **App Shortcuts**: Quick access to main sections
+- **Theme Integration**: Matches system theme preferences
+
+## 🧪 **Testing**
+
+```bash
+# Run tests
+npm test
+
+# Run type checking
+npm run type-check
+
+# Run linting
+npm run lint
 ```
 
-### Components
-All components are in `/components` directory:
-- `UnlockCard.tsx` - Offer display cards
-- `Navbar.tsx` - Navigation component
-- `AdminLayout.tsx` - Admin panel layout
+## 📊 **Analytics & Monitoring**
 
-## 📝 Content Management
+- **Google Analytics**: User behavior tracking
+- **Performance Monitoring**: Core Web Vitals tracking
+- **Error Tracking**: Built-in error logging
+- **User Engagement**: Page views and interaction tracking
 
-### Adding Offers
-1. Access admin panel
-2. Go to "Add New Offer"
-3. Fill in details (title, description, image, etc.)
-4. Set category and type
-5. Add download links
-6. Publish
-
-### Managing Articles
-1. Access "Articles & Blog" in admin
-2. Create new articles with Markdown editor
-3. Add images, links, and formatting
-4. Set categories and tags
-5. Publish or save as draft
-
-## 🔍 Search System
-
-The platform features advanced search:
-- **Multi-content search**: Searches both offers and articles
-- **Relevance scoring**: Smart ranking algorithm
-- **Filters**: By type, category, and date
-- **Real-time search**: Instant results as you type
-
-## 🚦 Performance
-
-### Optimization Features
-- **Image Optimization**: Next.js Image component
-- **Code Splitting**: Automatic code splitting
-- **Caching**: API response caching
-- **Lazy Loading**: Component lazy loading
-- **Minification**: CSS and JS minification
-
-### Performance Monitoring
-- **Core Web Vitals**: Optimized for Google metrics
-- **Bundle Analysis**: Use `npm run analyze`
-- **Lighthouse**: Regular performance audits
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **MongoDB Connection Error**
-   - Check MongoDB URI in `.env.local`
-   - Ensure MongoDB is running
-   - System automatically falls back to JSON
-
-2. **Build Errors**
-   - Clear `.next` folder: `rm -rf .next`
-   - Reinstall dependencies: `rm -rf node_modules && npm install`
-
-3. **Admin Login Issues**
-   - Check `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env.local`
-   - Verify JWT_SECRET is set
-
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Check the documentation
-- Review the deployment guide
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
+## 🤝 **Contributing**
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 🔄 Updates
+## 📄 **License**
 
-To update the project:
-```bash
-git pull origin main
-npm install
-npm run build
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 **Support**
+
+- **Documentation**: [View full documentation](DEPLOYMENT.md)
+- **Issues**: [Report bugs or request features](https://bitbucket.org/unlockvault/unlockvault/issues)
+- **Email**: support@unlockvault.xyz
+
+## 🌟 **Changelog**
+
+### **v2.0.0** - Latest Release
+- ✨ Premium article details page with enhanced UI/UX
+- 🔍 Complete SEO optimization with structured data
+- 📱 Social media sharing integration
+- 🚀 RSS feed and sitemap generation
+- 🛠️ Enhanced admin dashboard
+- 📊 Improved analytics and monitoring
+
+### **v1.0.0** - Initial Release
+- 🎯 Basic content management system
+- 🔐 Admin authentication
+- 📄 Article and offer management
+- 🎨 Responsive design
+- 🔍 Basic search functionality
 
 ---
 
-**Built with ❤️ for the community**
+<div align="center">
+
+**Made with ❤️ by the UnlockVault Team**
+
+[🌐 Website](https://unlockvault.xyz) • [📧 Contact](mailto:support@unlockvault.xyz) • [🐦 Twitter](https://twitter.com/UnlockVault)
+
+</div>
