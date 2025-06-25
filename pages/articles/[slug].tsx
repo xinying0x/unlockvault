@@ -42,22 +42,37 @@ const ArticleDetailPage = () => {
       // Fetch article
       const response = await fetch(`/api/articles/${articleSlug}`);
       if (!response.ok) {
-        throw new Error('Article not found');
+        const errorData = await response.text();
+        console.error('Article fetch error:', response.status, errorData);
+        throw new Error(`Article not found (${response.status})`);
       }
+      
       const articleData = await response.json();
+      console.log('Article data:', articleData);
       setArticle(articleData);
 
       // Fetch related articles
-      const relatedResponse = await fetch(`/api/articles?category=${articleData.category}&limit=4`);
-      const relatedData = await relatedResponse.json();
-      // Filter out current article from related articles
-      const filteredRelated = relatedData.articles ? 
-        relatedData.articles.filter((a: Article) => a.slug !== articleData.slug) : 
-        [];
-      setRelatedArticles(filteredRelated.slice(0, 3));
+      try {
+        const relatedResponse = await fetch(`/api/articles?category=${articleData.category}&exclude=${articleData.id}&limit=4`);
+        if (relatedResponse.ok) {
+          const relatedData = await relatedResponse.json();
+          setRelatedArticles(Array.isArray(relatedData) ? relatedData : []);
+        } else {
+          console.error('Failed to fetch related articles:', relatedResponse.status);
+          setRelatedArticles([]);
+        }
+      } catch (relatedErr) {
+        console.error('Error fetching related articles:', relatedErr);
+        setRelatedArticles([]);
+      }
 
       // Track view
-      await fetch(`/api/articles/${articleSlug}/view`, { method: 'POST' });
+      try {
+        await fetch(`/api/articles/${articleSlug}/view`, { method: 'POST' });
+      } catch (viewErr) {
+        console.error('Failed to track article view:', viewErr);
+        // Non-critical error, continue without failing
+      }
     } catch (err: any) {
       console.error('Failed to fetch article:', err);
       setError(err.message || 'Failed to load article');

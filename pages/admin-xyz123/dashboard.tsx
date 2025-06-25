@@ -256,7 +256,7 @@ const AdminDashboard: React.FC = () => {
         fetch('/api/stats'),
         fetch('/api/activity'),
         fetch('/api/visit-stats'),
-        fetch('/api/articles?published=false'),
+        fetch('/api/articles?published=all'),
         fetch('/api/offers')
       ]);
 
@@ -271,20 +271,34 @@ const AdminDashboard: React.FC = () => {
         }
         
         if (articlesRes.ok) {
-          articlesData = await articlesRes.json();
+          const articlesResponse = await articlesRes.json();
+          // Handle both array response and paginated response format
+          if (Array.isArray(articlesResponse)) {
+            articlesData = articlesResponse;
+          } else if (articlesResponse.articles && Array.isArray(articlesResponse.articles)) {
+            articlesData = articlesResponse.articles;
+          } else {
+            console.error('Unexpected articles API response format:', articlesResponse);
+            articlesData = [];
+          }
         }
         
         if (offersRes.ok) {
           offersData = await offersRes.json();
         }
         
+        // Ensure articlesData contains valid objects
+        const validArticles = Array.isArray(articlesData) 
+          ? articlesData.filter(a => a && typeof a === 'object')
+          : [];
+        
         // Calculate articles statistics
-        const totalArticles = articlesData.length;
-        const publishedArticles = articlesData.filter(a => a.published).length;
+        const totalArticles = validArticles.length;
+        const publishedArticles = validArticles.filter(a => a.published).length;
         const draftArticles = totalArticles - publishedArticles;
-        const totalArticleViews = articlesData.reduce((sum, a) => sum + (a.views || 0), 0);
+        const totalArticleViews = validArticles.reduce((sum, a) => sum + (a.views || 0), 0);
         const todayArticleViews = Math.floor(totalArticleViews * 0.1); // Estimate
-        const searchIndexed = publishedArticles + offersData.filter(o => o.status === 'active').length;
+        const searchIndexed = publishedArticles + (Array.isArray(offersData) ? offersData.filter(o => o && o.status === 'active').length : 0);
         
         setStats(prev => ({
           ...prev,

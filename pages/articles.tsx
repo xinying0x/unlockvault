@@ -44,11 +44,27 @@ const ArticlesPage = () => {
 
   const fetchArticles = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/articles');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch articles: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
-      setArticles(data);
+      console.log('Articles data:', data);
+      
+      if (Array.isArray(data)) {
+        setArticles(data);
+      } else if (data.articles && Array.isArray(data.articles)) {
+        setArticles(data.articles);
+      } else {
+        console.error('Unexpected API response format:', data);
+        setArticles([]);
+      }
     } catch (error) {
       console.error('Error fetching articles:', error);
+      setArticles([]);
     } finally {
       setLoading(false);
     }
@@ -65,7 +81,19 @@ const ArticlesPage = () => {
   };
 
   const filterArticles = () => {
-    let filtered = articles.filter(article => article.published);
+    if (!Array.isArray(articles)) {
+      console.error('Articles is not an array:', articles);
+      setFilteredArticles([]);
+      return;
+    }
+
+    // Ensure articles is an array and each article has the expected properties
+    let validArticles = articles.filter(article => 
+      article && typeof article === 'object' && 'published' in article
+    );
+    
+    // Filter published articles
+    let filtered = validArticles.filter(article => article.published);
 
     if (selectedCategory !== 'All') {
       // Check if category is selected by name or slug
@@ -74,7 +102,7 @@ const ArticlesPage = () => {
         filtered = filtered.filter(article => 
           article.category === selectedCat.name || 
           article.category === selectedCat.slug ||
-          article.category.toLowerCase() === selectedCat.name.toLowerCase()
+          (typeof article.category === 'string' && article.category.toLowerCase() === selectedCat.name.toLowerCase())
         );
       } else {
         // Fallback to direct name matching
@@ -85,10 +113,10 @@ const ArticlesPage = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(article =>
-        article.title.toLowerCase().includes(query) ||
-        article.summary.toLowerCase().includes(query) ||
-        article.content.toLowerCase().includes(query) ||
-        article.tags.some(tag => tag.toLowerCase().includes(query))
+        (typeof article.title === 'string' && article.title.toLowerCase().includes(query)) ||
+        (typeof article.summary === 'string' && article.summary.toLowerCase().includes(query)) ||
+        (typeof article.content === 'string' && article.content.toLowerCase().includes(query)) ||
+        (Array.isArray(article.tags) && article.tags.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(query)))
       );
     }
 

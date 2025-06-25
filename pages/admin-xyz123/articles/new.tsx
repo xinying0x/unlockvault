@@ -136,11 +136,12 @@ const NewArticlePage = () => {
         router.push('/admin-xyz123/articles');
       } else {
         console.error('Failed to create article:', responseData);
-        alert(`Failed to create article: ${responseData.message || 'Unknown error'}`);
+        const errorMessage = responseData.error || responseData.message || 'Unknown error';
+        alert(`Failed to create article: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error creating article:', error);
-      alert('Network error: Failed to create article. Please check your connection and try again.');
+      alert(`Network error: Failed to create article. ${error instanceof Error ? error.message : 'Please check your connection and try again.'}`);
     } finally {
       setLoading(false);
     }

@@ -93,9 +93,15 @@ const AdminArticlesPage = () => {
   };
 
   const filteredArticles = articles.filter(article => {
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         article.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!article || typeof article !== 'object') return false;
+    
+    const matchesSearch = searchQuery ? (
+      (typeof article.title === 'string' && article.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (typeof article.summary === 'string' && article.summary.toLowerCase().includes(searchQuery.toLowerCase()))
+    ) : true;
+    
     const matchesCategory = selectedCategory === 'All' || article.category === selectedCategory;
+    
     return matchesSearch && matchesCategory;
   });
 
@@ -181,15 +187,24 @@ const AdminArticlesPage = () => {
             <div className="text-gray-400 text-sm">Total Articles</div>
           </div>
           <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="text-2xl font-bold text-green-400">{articles.filter(a => a.published).length}</div>
+            <div className="text-2xl font-bold text-green-400">
+              {articles.filter(a => a && typeof a === 'object' && a.published).length}
+            </div>
             <div className="text-gray-400 text-sm">Published</div>
           </div>
           <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="text-2xl font-bold text-yellow-400">{articles.filter(a => !a.published).length}</div>
+            <div className="text-2xl font-bold text-yellow-400">
+              {articles.filter(a => a && typeof a === 'object' && !a.published).length}
+            </div>
             <div className="text-gray-400 text-sm">Drafts</div>
           </div>
           <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="text-2xl font-bold text-blue-400">{articles.reduce((sum, a) => sum + a.views, 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold text-blue-400">
+              {articles
+                .filter(a => a && typeof a === 'object')
+                .reduce((sum, a) => sum + (typeof a.views === 'number' ? a.views : 0), 0)
+                .toLocaleString()}
+            </div>
             <div className="text-gray-400 text-sm">Total Views</div>
           </div>
         </div>

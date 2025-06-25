@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { connectToDatabase } from '../../../lib/mongodb';
+import { connectToDatabase, safeDbOperation } from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 interface Article {
@@ -33,14 +33,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     switch (req.method) {
       case 'GET':
-        // Find article by slug - don't filter by published status
+        // Find article by slug - don't filter by published status to allow admin access
         const article = await collection.findOne({ slug: slug });
 
         if (!article) {
           return res.status(404).json({ message: 'Article not found' });
         }
 
-        // Return article without incrementing views
+        // Return article without incrementing views (views are tracked separately)
         const returnedArticle = {
           ...article,
           _id: article._id.toString()
@@ -52,24 +52,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'PUT':
         const updatedArticleData = req.body;
 
-        // Handle view increment
+        // Handle view increment - this is now handled by the separate endpoint
         if (updatedArticleData.action === 'incrementViews') {
-          const result = await collection.updateOne(
-            { slug: slug },
-            { 
-              $inc: { views: 1 },
-              $set: { lastModified: new Date().toISOString() }
-            }
-          );
-          
-          if (result.matchedCount === 0) {
-            return res.status(404).json({ message: 'Article not found' });
-          }
-
-          const updatedArticle = await collection.findOne({ slug: slug });
-          return res.status(200).json({ 
-            message: 'View count incremented successfully',
-            views: updatedArticle?.views || 0
+          return res.status(400).json({ 
+            message: 'View increments should use the /api/articles/[slug]/view endpoint' 
           });
         }
 
@@ -101,12 +87,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Remove _id from update data
         delete updateData._id;
 
-        await collection.updateOne(
+        const updateResult = await collection.updateOne(
           { slug: slug },
           { $set: updateData }
         );
 
-        res.status(200).json({ message: 'Article updated successfully' });
+        if (updateResult.matchedCount === 0) {
+          return res.status(404).json({ message: 'Article not found' });
+        }
+
+        res.status(200).json({ 
+          message: 'Article updated successfully',
+          slug: slug,
+          modifiedCount: updateResult.modifiedCount
+        });
         break;
 
       case 'DELETE':
@@ -116,7 +110,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ message: 'Article not found' });
         }
 
-        res.status(200).json({ message: 'Article deleted successfully' });
+        res.status(200).json({ 
+          message: 'Article deleted successfully',
+          slug: slug
+        });
         break;
 
       default:

@@ -1,52 +1,88 @@
-const { MongoClient } = require("mongodb");
-
-// Get MongoDB connection string from environment variables
-const MONGODB_URI = process.env.MONGODB_URI;
-const MONGODB_DB = process.env.MONGODB_DB || "unlockvault";
-
-if (!MONGODB_URI) {
-  console.error("No MONGODB_URI environment variable found");
-  process.exit(1);
-}
+const { MongoClient } = require('mongodb');
 
 async function setupMongoDB() {
-  console.log("Setting up MongoDB collections and indexes...");
-  console.log("Using database: " + MONGODB_DB);
+  console.log('Setting up MongoDB collections and indexes...');
   
-  const client = new MongoClient(MONGODB_URI);
+  // Use fallback values if environment variables are not set
+  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/unlockvault';
+  const dbName = process.env.MONGODB_DB || 'unlockvault';
+  
+  if (!uri) {
+    console.error('MONGODB_URI environment variable is not set');
+    process.exit(1);
+  }
+  
+  console.log(`Connecting to MongoDB at ${uri.split('@')[0].includes('://') ? uri.split('@')[0].split('://')[0] + '://*****:****@' + uri.split('@')[1] : uri}`);
+  
+  const client = new MongoClient(uri, {
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    retryWrites: true,
+    retryReads: true
+  });
   
   try {
-    // Connect to MongoDB
     await client.connect();
-    console.log("Connected to MongoDB");
+    console.log('Connected to MongoDB');
     
-    const db = client.db(MONGODB_DB);
+    const db = client.db(dbName);
     
-    // Setup articles collection
-    const articlesCollection = db.collection("articles");
-    console.log("Setting up articles collection...");
+    // Setup collections if they don't exist
+    const collections = await db.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
     
-    // Create indexes for articles
-    await articlesCollection.createIndex({ slug: 1 }, { unique: true });
-    await articlesCollection.createIndex({ published: 1 });
-    await articlesCollection.createIndex({ category: 1 });
-    await articlesCollection.createIndex({ createdAt: -1 });
-    await articlesCollection.createIndex({ tags: 1 });
+    const requiredCollections = [
+      'articles',
+      'offers',
+      'tools',
+      'users',
+      'visits',
+      'categories',
+      'testimonials',
+      'settings'
+    ];
     
-    // Check if articles collection is empty
-    const articlesCount = await articlesCollection.countDocuments();
-    console.log("Found " + articlesCount + " articles in database");
+    for (const collectionName of requiredCollections) {
+      if (!collectionNames.includes(collectionName)) {
+        console.log(`Creating collection: ${collectionName}`);
+        await db.createCollection(collectionName);
+      } else {
+        console.log(`Collection already exists: ${collectionName}`);
+      }
+    }
     
-    console.log("MongoDB setup completed successfully!");
+    // Create indexes
+    console.log('Creating indexes...');
     
+    // Articles indexes
+    await db.collection('articles').createIndex({ slug: 1 }, { unique: true });
+    await db.collection('articles').createIndex({ title: 'text', summary: 'text', content: 'text' });
+    await db.collection('articles').createIndex({ category: 1 });
+    await db.collection('articles').createIndex({ published: 1 });
+    await db.collection('articles').createIndex({ createdAt: -1 });
+    
+    // Offers indexes
+    await db.collection('offers').createIndex({ slug: 1 }, { unique: true });
+    await db.collection('offers').createIndex({ title: 'text', description: 'text' });
+    await db.collection('offers').createIndex({ category: 1 });
+    await db.collection('offers').createIndex({ featured: 1 });
+    
+    // Users indexes
+    await db.collection('users').createIndex({ email: 1 }, { unique: true });
+    
+    // Visits indexes
+    await db.collection('visits').createIndex({ timestamp: -1 });
+    await db.collection('visits').createIndex({ ip: 1 });
+    
+    console.log('MongoDB setup completed successfully');
   } catch (error) {
-    console.error("MongoDB setup failed:", error);
-    // Do not exit with error to allow build to continue
+    console.error('Error setting up MongoDB:', error);
+    process.exit(1);
   } finally {
     await client.close();
-    console.log("MongoDB connection closed");
+    console.log('MongoDB connection closed');
   }
 }
 
-// Run setup
-setupMongoDB();
+// Run the setup function
+setupMongoDB().catch(console.error);

@@ -39,7 +39,7 @@
       "description": "Discover premium applications",
       "url": "/apps"
     },
-    {
+        {
       "name": "Professional Tools",
       "short_name": "Tools",
       "description": "Access professional development tools",

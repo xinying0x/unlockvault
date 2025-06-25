@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { connectToDatabase, safeDbOperation } from '../../../../lib/mongodb';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -17,6 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { db } = await connectToDatabase();
     const collection = db.collection('articles');
 
+    // First check if the article exists
+    const article = await collection.findOne({ slug: slug });
+    
+    if (!article) {
+      return res.status(404).json({ message: 'Article not found' });
+    }
+
     // Increment views count
     const result = await collection.updateOne(
       { slug: slug },
@@ -30,9 +37,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ message: 'Article not found' });
     }
 
-    res.status(200).json({ message: 'View tracked successfully' });
+    // Get the updated view count
+    const updatedArticle = await collection.findOne({ slug: slug });
+    
+    res.status(200).json({ 
+      message: 'View tracked successfully',
+      views: updatedArticle?.views || 0,
+      slug: slug
+    });
   } catch (error) {
     console.error('View tracking error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ 
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 } 

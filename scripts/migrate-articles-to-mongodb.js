@@ -1,13 +1,22 @@
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: '.env.local' });
 
+// Try to load .env.local if it exists
+try {
+  require('dotenv').config({ path: '.env.local' });
+} catch (e) {
+  console.log('No .env.local file found, using environment variables');
+}
+
+// Use fallback values if environment variables are not set
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/unlockvault';
 const MONGODB_DB = process.env.MONGODB_DB || 'unlockvault';
 
 async function migrateArticlesToMongoDB() {
   console.log('🚀 Starting articles migration to MongoDB...');
+  console.log(`Using MongoDB URI: ${MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')}`);
+  console.log(`Using database: ${MONGODB_DB}`);
   
   const client = new MongoClient(MONGODB_URI);
   
@@ -74,6 +83,7 @@ async function migrateArticlesToMongoDB() {
     process.exit(1);
   } finally {
     await client.close();
+    console.log('📝 MongoDB connection closed');
   }
 }
 

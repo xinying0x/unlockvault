@@ -202,11 +202,12 @@ const EditArticlePage = () => {
         router.push('/admin-xyz123/articles');
       } else {
         console.error('Failed to update article:', responseData);
-        alert(`Failed to update article: ${responseData.message || 'Unknown error'}`);
+        const errorMessage = responseData.error || responseData.message || 'Unknown error';
+        alert(`Failed to update article: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error updating article:', error);
-      alert('Network error: Failed to update article. Please check your connection and try again.');
+      alert(`Network error: Failed to update article. ${error instanceof Error ? error.message : 'Please check your connection and try again.'}`);
     } finally {
       setLoading(false);
     }
