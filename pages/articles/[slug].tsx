@@ -49,6 +49,11 @@ const ArticleDetailPage = () => {
       
       const articleData = await response.json();
       console.log('Article data:', articleData);
+      
+      if (!articleData || typeof articleData !== 'object') {
+        throw new Error('Invalid article data received');
+      }
+      
       setArticle(articleData);
 
       // Fetch related articles
@@ -56,7 +61,7 @@ const ArticleDetailPage = () => {
         const relatedResponse = await fetch(`/api/articles?category=${articleData.category}&exclude=${articleData.id}&limit=4`);
         if (relatedResponse.ok) {
           const relatedData = await relatedResponse.json();
-          setRelatedArticles(Array.isArray(relatedData) ? relatedData : []);
+          setRelatedArticles(Array.isArray(relatedData) ? relatedData : (relatedData.articles && Array.isArray(relatedData.articles) ? relatedData.articles : []));
         } else {
           console.error('Failed to fetch related articles:', relatedResponse.status);
           setRelatedArticles([]);

@@ -28,18 +28,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    console.log(`API request for article with slug: ${slug}`);
+    
     const { db } = await connectToDatabase();
     const collection = db.collection('articles');
 
     switch (req.method) {
       case 'GET':
         // Find article by slug - don't filter by published status to allow admin access
+        console.log(`Looking for article with slug: ${slug} in MongoDB`);
         const article = await collection.findOne({ slug: slug });
 
         if (!article) {
+          console.log(`Article with slug ${slug} not found`);
           return res.status(404).json({ message: 'Article not found' });
         }
 
+        console.log(`Found article: ${article.title}`);
+        
         // Return article without incrementing views (views are tracked separately)
         const returnedArticle = {
           ...article,

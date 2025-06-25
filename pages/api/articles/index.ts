@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { connectToDatabase } from '../../../lib/mongodb';
+import { connectToDatabase, safeDbOperation } from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 interface Article {
@@ -65,51 +65,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ];
         }
 
-        // Handle pagination
-        const pageNum = parseInt(page as string) || 1;
-        const limitNum = parseInt(limit as string) || 0;
-        
-        if (limitNum > 0) {
-          const skip = (pageNum - 1) * limitNum;
+        console.log('MongoDB filter:', JSON.stringify(filter));
+
+        try {
+          // Handle pagination
+          const pageNum = parseInt(page as string) || 1;
+          const limitNum = parseInt(limit as string) || 0;
           
-          const [articles, total] = await Promise.all([
-            collection
-              .find(filter)
-              .sort({ createdAt: -1 })
-              .skip(skip)
-              .limit(limitNum)
-              .toArray(),
-            collection.countDocuments(filter)
-          ]);
-          
-          const response = {
-            articles: articles.map(article => ({
+          if (limitNum > 0) {
+            const skip = (pageNum - 1) * limitNum;
+            
+            const [articles, total] = await Promise.all([
+              collection
+                .find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum)
+                .toArray(),
+              collection.countDocuments(filter)
+            ]);
+            
+            console.log(`Found ${articles.length} articles with pagination (total: ${total})`);
+            
+            const response = {
+              articles: articles.map(article => ({
+                ...article,
+                _id: article._id.toString()
+              })),
+              pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total,
+                pages: Math.ceil(total / limitNum)
+              }
+            };
+            
+            res.status(200).json(response);
+          } else {
+            // Get articles without pagination
+            const query = collection.find(filter).sort({ createdAt: -1 });
+            
+            if (limit && !isNaN(Number(limit))) {
+              query.limit(Number(limit));
+            }
+            
+            const articles = await query.toArray();
+            console.log(`Found ${articles.length} articles without pagination`);
+            
+            res.status(200).json(articles.map(article => ({
               ...article,
               _id: article._id.toString()
-            })),
-            pagination: {
-              page: pageNum,
-              limit: limitNum,
-              total,
-              pages: Math.ceil(total / limitNum)
-            }
-          };
-          
-          res.status(200).json(response);
-        } else {
-          // Get articles without pagination
-          const query = collection.find(filter).sort({ createdAt: -1 });
-          
-          if (limit && !isNaN(Number(limit))) {
-            query.limit(Number(limit));
+            })));
           }
-          
-          const articles = await query.toArray();
-          
-          res.status(200).json(articles.map(article => ({
-            ...article,
-            _id: article._id.toString()
-          })));
+        } catch (error) {
+          console.error('Error fetching articles from MongoDB:', error);
+          // Return empty array on error
+          res.status(200).json([]);
         }
         break;
 
