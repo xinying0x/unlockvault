@@ -1,14 +1,12 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI as string;
+// Use fallback values if environment variables are not set
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/unlockvault';
+const dbName = process.env.MONGODB_DB || 'unlockvault';
 const options = {};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
-
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MongoDB URI to .env.local');
-}
 
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
@@ -28,9 +26,14 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export async function connectToDatabase() {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB || 'unlockvault');
-  return { client, db };
+  try {
+    const client = await clientPromise;
+    const db = client.db(dbName);
+    return { client, db };
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+    throw new Error('Database connection failed');
+  }
 }
 
 export default clientPromise; 
