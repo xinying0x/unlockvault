@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
-import fs from 'fs';
-import path from 'path';
 
 interface Article {
   _id?: ObjectId;
@@ -29,37 +27,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ message: 'Article slug is required' });
   }
 
-  // Always try JSON fallback first since MongoDB might not be available
   try {
-    const filePath = path.join(process.cwd(), 'data', 'articles.json');
-    let articles: Article[] = [];
-    
-    // Read existing articles
-    if (fs.existsSync(filePath)) {
-      const fileContents = fs.readFileSync(filePath, 'utf8');
-      articles = JSON.parse(fileContents);
-    }
+    const { db } = await connectToDatabase();
+    const collection = db.collection('articles');
 
     switch (req.method) {
       case 'GET':
         // Find article by slug
-        const article = articles.find(a => a.slug === slug);
+        const article = await collection.findOne({ 
+          slug: slug,
+          published: true 
+        });
 
-        if (!article || !article.published) {
+        if (!article) {
           return res.status(404).json({ message: 'Article not found' });
         }
 
-        // Increment views count in JSON file
-        let articleIndex = articles.findIndex(a => a.slug === slug);
-        if (articleIndex !== -1) {
-          articles[articleIndex].views = (articles[articleIndex].views || 0) + 1;
-          articles[articleIndex].lastModified = new Date().toISOString();
-          
-          // Write back to file
-          fs.writeFileSync(filePath, JSON.stringify(articles, null, 2));
-        }
+        // Increment views count
+        await collection.updateOne(
+          { slug: slug },
+          { 
+            $inc: { views: 1 },
+            $set: { lastModified: new Date().toISOString() }
+          }
+        );
 
-        res.status(200).json({ ...article, views: (article.views || 0) + 1 });
+        // Return article with incremented views
+        const updatedArticle = {
+          ...article,
+          _id: article._id.toString(),
+          views: (article.views || 0) + 1
+        };
+
+        res.status(200).json(updatedArticle);
         break;
 
       case 'PUT':
@@ -67,28 +67,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Handle view increment
         if (updatedArticleData.action === 'incrementViews') {
-          articleIndex = articles.findIndex(a => a.slug === slug);
+          const result = await collection.updateOne(
+            { slug: slug },
+            { 
+              $inc: { views: 1 },
+              $set: { lastModified: new Date().toISOString() }
+            }
+          );
           
-          if (articleIndex === -1) {
+          if (result.matchedCount === 0) {
             return res.status(404).json({ message: 'Article not found' });
           }
 
-          articles[articleIndex].views = (articles[articleIndex].views || 0) + 1;
-          articles[articleIndex].lastModified = new Date().toISOString();
-          
-          // Write back to file
-          fs.writeFileSync(filePath, JSON.stringify(articles, null, 2));
-
+          const updatedArticle = await collection.findOne({ slug: slug });
           return res.status(200).json({ 
             message: 'View count incremented successfully',
-            views: articles[articleIndex].views
+            views: updatedArticle?.views || 0
           });
         }
 
         // Handle general updates
-        articleIndex = articles.findIndex(a => a.slug === slug);
+        const existingArticle = await collection.findOne({ slug: slug });
         
-        if (articleIndex === -1) {
+        if (!existingArticle) {
           return res.status(404).json({ message: 'Article not found' });
         }
 
@@ -98,39 +99,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
 
         const updateData = {
-          ...articles[articleIndex],
           ...updatedArticleData,
           lastModified: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          title: sanitizeString(updatedArticleData.title || articles[articleIndex].title),
-          summary: sanitizeString(updatedArticleData.summary || articles[articleIndex].summary),
-          author: sanitizeString(updatedArticleData.author || articles[articleIndex].author),
-          category: sanitizeString(updatedArticleData.category || articles[articleIndex].category),
+          title: sanitizeString(updatedArticleData.title || existingArticle.title),
+          summary: sanitizeString(updatedArticleData.summary || existingArticle.summary),
+          author: sanitizeString(updatedArticleData.author || existingArticle.author),
+          category: sanitizeString(updatedArticleData.category || existingArticle.category),
           tags: Array.isArray(updatedArticleData.tags) 
             ? updatedArticleData.tags.map(sanitizeString)
-            : articles[articleIndex].tags
+            : existingArticle.tags
         };
 
-        articles[articleIndex] = updateData;
-        
-        // Write back to file
-        fs.writeFileSync(filePath, JSON.stringify(articles, null, 2));
+        // Remove _id from update data
+        delete updateData._id;
+
+        await collection.updateOne(
+          { slug: slug },
+          { $set: updateData }
+        );
 
         res.status(200).json({ message: 'Article updated successfully' });
         break;
 
       case 'DELETE':
-        const deleteIndex = articles.findIndex(a => a.slug === slug);
+        const deleteResult = await collection.deleteOne({ slug: slug });
 
-        if (deleteIndex === -1) {
+        if (deleteResult.deletedCount === 0) {
           return res.status(404).json({ message: 'Article not found' });
         }
-
-        // Remove article from array
-        articles.splice(deleteIndex, 1);
-        
-        // Write back to file
-        fs.writeFileSync(filePath, JSON.stringify(articles, null, 2));
 
         res.status(200).json({ message: 'Article deleted successfully' });
         break;

@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
-import fs from 'fs';
-import path from 'path';
 
 interface Article {
   _id?: ObjectId;
@@ -23,15 +21,9 @@ interface Article {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const filePath = path.join(process.cwd(), 'data', 'articles.json');
-  
   try {
-    // Read existing articles from JSON file
-    let articles: Article[] = [];
-    if (fs.existsSync(filePath)) {
-      const fileContents = fs.readFileSync(filePath, 'utf8');
-      articles = JSON.parse(fileContents);
-    }
+    const { db } = await connectToDatabase();
+    const collection = db.collection('articles');
 
     switch (req.method) {
       case 'GET':
@@ -44,71 +36,80 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           page = '1'
         } = req.query;
         
-        // Filter articles based on query parameters
-        let filteredArticles = [...articles];
+        // Build MongoDB filter
+        let filter: any = {};
         
         // Handle published filter - support 'all' for admin access
         if (published === 'true') {
-          filteredArticles = filteredArticles.filter(article => article.published);
+          filter.published = true;
         } else if (published === 'false') {
-          filteredArticles = filteredArticles.filter(article => !article.published);
+          filter.published = false;
         }
         // If published === 'all', show all articles (no filter)
         
         if (category && category !== 'all') {
-          filteredArticles = filteredArticles.filter(article => 
-            article.category.toLowerCase().includes((category as string).toLowerCase())
-          );
+          filter.category = { $regex: category as string, $options: 'i' };
         }
         
         if (tag) {
-          filteredArticles = filteredArticles.filter(article => 
-            article.tags.some(t => t.toLowerCase().includes((tag as string).toLowerCase()))
-          );
+          filter.tags = { $regex: tag as string, $options: 'i' };
         }
         
         if (search) {
-          const searchTerm = (search as string).toLowerCase();
-          filteredArticles = filteredArticles.filter(article => 
-            article.title.toLowerCase().includes(searchTerm) ||
-            article.summary.toLowerCase().includes(searchTerm) ||
-            article.content.toLowerCase().includes(searchTerm) ||
-            article.tags.some(t => t.toLowerCase().includes(searchTerm))
-          );
+          const searchTerm = search as string;
+          filter.$or = [
+            { title: { $regex: searchTerm, $options: 'i' } },
+            { summary: { $regex: searchTerm, $options: 'i' } },
+            { content: { $regex: searchTerm, $options: 'i' } },
+            { tags: { $regex: searchTerm, $options: 'i' } }
+          ];
         }
-
-        // Sort by createdAt date (newest first)
-        filteredArticles.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
 
         // Handle pagination
         const pageNum = parseInt(page as string) || 1;
         const limitNum = parseInt(limit as string) || 0;
         
         if (limitNum > 0) {
-          const startIndex = (pageNum - 1) * limitNum;
-          const endIndex = startIndex + limitNum;
-          const paginatedArticles = filteredArticles.slice(startIndex, endIndex);
+          const skip = (pageNum - 1) * limitNum;
+          
+          const [articles, total] = await Promise.all([
+            collection
+              .find(filter)
+              .sort({ createdAt: -1 })
+              .skip(skip)
+              .limit(limitNum)
+              .toArray(),
+            collection.countDocuments(filter)
+          ]);
           
           const response = {
-            articles: paginatedArticles,
+            articles: articles.map(article => ({
+              ...article,
+              _id: article._id.toString()
+            })),
             pagination: {
               page: pageNum,
               limit: limitNum,
-              total: filteredArticles.length,
-              pages: Math.ceil(filteredArticles.length / limitNum)
+              total,
+              pages: Math.ceil(total / limitNum)
             }
           };
           
           res.status(200).json(response);
         } else {
-          // Apply limit if specified without pagination
+          // Get articles without pagination
+          const query = collection.find(filter).sort({ createdAt: -1 });
+          
           if (limit && !isNaN(Number(limit))) {
-            filteredArticles = filteredArticles.slice(0, Number(limit));
+            query.limit(Number(limit));
           }
           
-          res.status(200).json(filteredArticles);
+          const articles = await query.toArray();
+          
+          res.status(200).json(articles.map(article => ({
+            ...article,
+            _id: article._id.toString()
+          })));
         }
         break;
 
@@ -134,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Ensure slug is unique
         let finalSlug = baseSlug;
         let counter = 1;
-        while (articles.some(a => a.slug === finalSlug)) {
+        while (await collection.findOne({ slug: finalSlug })) {
           finalSlug = `${baseSlug}-${counter}`;
           counter++;
         }
@@ -164,17 +165,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           updatedAt: new Date().toISOString()
         };
 
-        // Add to articles array
-        articles.push(articleToAdd);
-        
-        // Write back to file
-        fs.writeFileSync(filePath, JSON.stringify(articles, null, 2));
+        // Insert into MongoDB
+        const result = await collection.insertOne(articleToAdd);
         
         res.status(201).json({ 
           message: 'Article created successfully', 
           id: articleId,
           slug: finalSlug,
-          article: articleToAdd
+          article: {
+            ...articleToAdd,
+            _id: result.insertedId.toString()
+          }
         });
         break;
 

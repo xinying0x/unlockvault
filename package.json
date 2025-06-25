@@ -13,7 +13,8 @@
     "sync-offers": "node scripts/sync-offers.js",
     "seed-articles": "node scripts/seed-articles.js",
     "migrate": "node scripts/migrate-to-mongodb.js",
-    "setup-db": "npm run migrate"
+    "migrate-articles": "node scripts/migrate-articles-to-mongodb.js",
+    "setup-db": "npm run migrate && npm run migrate-articles"
   },
   "dependencies": {
     "@heroicons/react": "latest",
