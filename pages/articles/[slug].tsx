@@ -48,9 +48,13 @@ const ArticleDetailPage = () => {
       setArticle(articleData);
 
       // Fetch related articles
-      const relatedResponse = await fetch(`/api/articles?category=${articleData.category}&exclude=${articleData.id}&limit=4`);
+      const relatedResponse = await fetch(`/api/articles?category=${articleData.category}&limit=4`);
       const relatedData = await relatedResponse.json();
-      setRelatedArticles(relatedData);
+      // Filter out current article from related articles
+      const filteredRelated = relatedData.articles ? 
+        relatedData.articles.filter((a: Article) => a.slug !== articleData.slug) : 
+        [];
+      setRelatedArticles(filteredRelated.slice(0, 3));
 
       // Track view
       await fetch(`/api/articles/${articleSlug}/view`, { method: 'POST' });
