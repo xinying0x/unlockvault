@@ -16,7 +16,10 @@
     "migrate-articles": "node scripts/migrate-articles.js",
     "setup-db": "npm run migrate && npm run migrate-articles",
     "setup-vercel": "node scripts/setup-vercel-mongodb.js",
-    "check-articles": "node scripts/check-articles.js"
+    "check-articles": "node scripts/check-articles.js",
+    "sync-content": "node scripts/sync-all.js",
+    "sync-articles": "node -e \"require('./lib/syncArticles').syncArticlesToFile()\"",
+    "sync-all": "node -e \"require('./lib/syncArticles').syncAllContent()\""
   },
   "dependencies": {
     "@heroicons/react": "latest",

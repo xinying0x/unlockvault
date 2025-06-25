@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { connectToDatabase, safeDbOperation } from '../../../lib/mongodb';
+import { autoSyncArticles } from '../../../lib/syncArticles';
 import { ObjectId } from 'mongodb';
 
 interface Article {
@@ -178,6 +179,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Insert into MongoDB
         const result = await collection.insertOne(articleToAdd);
+        
+        // Auto-sync articles to JSON file for search functionality
+        console.log('🔄 Auto-syncing articles after creation...');
+        await autoSyncArticles();
         
         res.status(201).json({ 
           message: 'Article created successfully', 

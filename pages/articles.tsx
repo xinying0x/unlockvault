@@ -45,18 +45,23 @@ const ArticlesPage = () => {
   const fetchArticles = async () => {
     try {
       setLoading(true);
+      console.log('Fetching articles...');
+      
       const response = await fetch('/api/articles');
       
       if (!response.ok) {
+        console.error(`Failed to fetch articles: ${response.status} ${response.statusText}`);
         throw new Error(`Failed to fetch articles: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('Articles data:', data);
+      console.log('Articles data received:', data);
       
       if (Array.isArray(data)) {
+        console.log(`Received ${data.length} articles as array`);
         setArticles(data);
       } else if (data.articles && Array.isArray(data.articles)) {
+        console.log(`Received ${data.articles.length} articles in paginated format`);
         setArticles(data.articles);
       } else {
         console.error('Unexpected API response format:', data);
@@ -73,10 +78,20 @@ const ArticlesPage = () => {
   const fetchCategories = async () => {
     try {
       const response = await fetch('/api/categories?type=articles');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
-      setCategories(data);
+      if (Array.isArray(data)) {
+        setCategories(data);
+      } else {
+        console.error('Unexpected categories API response format:', data);
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 

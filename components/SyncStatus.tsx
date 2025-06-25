@@ -7,15 +7,24 @@ interface SyncStatus {
   needsSync: boolean;
 }
 
+interface FullSyncStatus {
+  articles: SyncStatus;
+  offers: SyncStatus;
+  overallStatus: {
+    needsSync: boolean;
+    lastCheck: string;
+  };
+}
+
 const SyncStatusComponent: React.FC = () => {
-  const [status, setStatus] = useState<SyncStatus | null>(null);
+  const [status, setStatus] = useState<FullSyncStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const fetchSyncStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/sync-offers', {
+      const response = await fetch('/api/admin/sync-status', {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -24,13 +33,35 @@ const SyncStatusComponent: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setStatus(data.status);
-        setLastSyncTime(data.timestamp);
+        setStatus(data);
       }
     } catch (error) {
       console.error('Failed to fetch sync status:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const triggerSync = async () => {
+    try {
+      setSyncing(true);
+      const response = await fetch('/api/admin/sync-status', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setStatus(data);
+        console.log('Sync completed:', data.message);
+      }
+    } catch (error) {
+      console.error('Failed to trigger sync:', error);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -66,78 +97,105 @@ const SyncStatusComponent: React.FC = () => {
           </div>
         </h3>
         
-        <button
-          onClick={fetchSyncStatus}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-blue-300 transition-all disabled:opacity-50"
-          title="Refresh Status"
-        >
-          <span className={loading ? 'animate-spin' : ''}>{loading ? '⟳' : '🔄'}</span>
-          <span className="text-sm">Refresh</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchSyncStatus}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-blue-300 transition-all disabled:opacity-50"
+            title="Refresh Status"
+          >
+            <span className={loading ? 'animate-spin' : ''}>{loading ? '⟳' : '🔄'}</span>
+            <span className="text-sm">Refresh</span>
+          </button>
+          
+          {status?.overallStatus.needsSync && (
+            <button
+              onClick={triggerSync}
+              disabled={syncing}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-green-300 transition-all disabled:opacity-50"
+              title="Force Sync"
+            >
+              <span className={syncing ? 'animate-spin' : ''}>{syncing ? '⟳' : '🔄'}</span>
+              <span className="text-sm">Sync Now</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {status ? (
         <div className="space-y-6">
-          {/* Status Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <span className="text-lg">🗄️</span>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-400">Database</div>
-                  <div className="text-xs text-gray-500">MongoDB</div>
-                </div>
+          {/* Overall Status */}
+          <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`p-2 rounded-lg ${status.overallStatus.needsSync ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
+                <span className="text-lg">{status.overallStatus.needsSync ? '⚠️' : '✅'}</span>
               </div>
-              <div className="text-2xl font-bold text-green-400">{status.mongoCount}</div>
-              <div className="text-xs text-gray-400 mt-1">Available offers</div>
+              <div>
+                <div className="text-sm text-gray-400">Overall Status</div>
+                <div className="text-xs text-gray-500">System State</div>
+              </div>
             </div>
-            
-            <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <span className="text-lg">🔍</span>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-400">Search Index</div>
-                  <div className="text-xs text-gray-500">JSON File</div>
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-blue-400">{status.fileCount}</div>
-              <div className="text-xs text-gray-400 mt-1">Indexed offers</div>
+            <div className={`text-lg font-bold ${status.overallStatus.needsSync ? 'text-red-400' : 'text-green-400'}`}>
+              {status.overallStatus.needsSync ? 'Out of Sync' : 'In Sync'}
             </div>
-            
-            <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`p-2 rounded-lg ${status.needsSync ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
-                  <span className="text-lg">{status.needsSync ? '⚠️' : '✅'}</span>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-400">Status</div>
-                  <div className="text-xs text-gray-500">Sync State</div>
-                </div>
-              </div>
-              <div className={`text-lg font-bold ${status.needsSync ? 'text-red-400' : 'text-green-400'}`}>
-                {status.needsSync ? 'Out of Sync' : 'In Sync'}
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                {status.needsSync ? 'Needs Update' : 'Up to Date'}
-              </div>
+            <div className="text-xs text-gray-400 mt-1">
+              {status.overallStatus.needsSync ? 'Needs Update' : 'Up to Date'}
             </div>
           </div>
 
-          {/* Sync Information */}
-          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/40">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-gray-400 text-sm">Last Sync:</span>
-                <span className="text-white text-sm font-medium">{formatDate(status.lastSync)}</span>
+          {/* Articles and Offers Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Articles Status */}
+            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/40">
+              <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <span>📄</span>
+                Articles Status
+              </h4>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-400">{status.articles.mongoCount}</div>
+                  <div className="text-xs text-gray-400">MongoDB</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">{status.articles.fileCount}</div>
+                  <div className="text-xs text-gray-400">Search Index</div>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-gray-400 text-sm">Last Check:</span>
-                <span className="text-white text-sm font-medium">{formatDate(lastSyncTime)}</span>
+              
+              <div className={`text-center text-sm font-medium ${status.articles.needsSync ? 'text-red-400' : 'text-green-400'}`}>
+                {status.articles.needsSync ? 'Out of Sync' : 'In Sync'}
+              </div>
+              
+              <div className="text-xs text-gray-400 text-center mt-2">
+                Last Sync: {formatDate(status.articles.lastSync)}
+              </div>
+            </div>
+
+            {/* Offers Status */}
+            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/40">
+              <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <span>🎯</span>
+                Offers Status
+              </h4>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">{status.offers.mongoCount}</div>
+                  <div className="text-xs text-gray-400">MongoDB</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">{status.offers.fileCount}</div>
+                  <div className="text-xs text-gray-400">Search Index</div>
+                </div>
+              </div>
+              
+              <div className={`text-center text-sm font-medium ${status.offers.needsSync ? 'text-red-400' : 'text-green-400'}`}>
+                {status.offers.needsSync ? 'Out of Sync' : 'In Sync'}
+              </div>
+              
+              <div className="text-xs text-gray-400 text-center mt-2">
+                Last Sync: {formatDate(status.offers.lastSync)}
               </div>
             </div>
           </div>
@@ -151,10 +209,10 @@ const SyncStatusComponent: React.FC = () => {
               <div>
                 <h4 className="text-blue-300 font-medium mb-2">Automatic Synchronization</h4>
                 <p className="text-blue-200 text-sm leading-relaxed">
-                  Sync occurs automatically when offers are created, updated, or deleted. Manual intervention is rarely needed.
+                  Sync occurs automatically when articles or offers are created, updated, or deleted. Manual intervention is rarely needed.
                 </p>
                 <p className="text-blue-300/80 text-xs mt-2">
-                  Status checked every minute to ensure data integrity
+                  Status checked every minute to ensure data integrity • Last Check: {formatDate(status.overallStatus.lastCheck)}
                 </p>
               </div>
             </div>

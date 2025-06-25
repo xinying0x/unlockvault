@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { connectToDatabase, safeDbOperation } from '../../../lib/mongodb';
+import { autoSyncArticles } from '../../../lib/syncArticles';
 import { ObjectId } from 'mongodb';
 
 interface Article {
@@ -102,6 +103,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ message: 'Article not found' });
         }
 
+        // Auto-sync articles to JSON file for search functionality
+        console.log('🔄 Auto-syncing articles after update...');
+        await autoSyncArticles();
+
         res.status(200).json({ 
           message: 'Article updated successfully',
           slug: slug,
@@ -115,6 +120,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (deleteResult.deletedCount === 0) {
           return res.status(404).json({ message: 'Article not found' });
         }
+
+        // Auto-sync articles to JSON file for search functionality
+        console.log('🔄 Auto-syncing articles after deletion...');
+        await autoSyncArticles();
 
         res.status(200).json({ 
           message: 'Article deleted successfully',
