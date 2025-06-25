@@ -32,6 +32,7 @@ export default function AdminLayout({ children, title = 'Dashboard' }: AdminLayo
     { href: '/admin-xyz123/manage', label: 'Manage Offers', icon: '📝' },
     { href: '/admin-xyz123/articles', label: 'Articles & Blog', icon: '📄' },
     { href: '/admin-xyz123/visitors', label: 'Visitors Analytics', icon: '👥' },
+    { href: '/admin-xyz123/social-settings', label: 'Social Media', icon: '📱' },
     { href: '/admin-xyz123/security', label: 'Security', icon: '🛡️' },
     { href: '/admin-xyz123/settings', label: 'Settings', icon: '⚙️' },
     { href: '/', label: 'View Site', icon: '🌐', target: '_blank' },

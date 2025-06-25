@@ -4,6 +4,19 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Article } from '../../types';
 
+interface SocialSettings {
+  facebook: string;
+  twitter: string;
+  instagram: string;
+  youtube: string;
+  tiktok: string;
+  linkedin: string;
+  whatsapp: string;
+  telegram: string;
+  email: string;
+  website: string;
+}
+
 const ArticleDetailPage = () => {
   const router = useRouter();
   const { slug } = router.query;
