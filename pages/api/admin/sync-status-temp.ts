@@ -5,7 +5,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Temp sync status API called');
     
     // Return a basic response for now
-    const response = {
+    const response: any = {
       articles: {
         mongoCount: 1,
         fileCount: 0,
