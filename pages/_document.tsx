@@ -121,6 +121,8 @@ export default function Document() {
         <meta name="description" content="UnlockVault - Premium Tools, Apps & Games. Unlock exclusive content with our secure platform." />
         <meta name="keywords" content="unlock, premium tools, apps, games, software, download" />
         <meta name="author" content="UnlockVault" />
+        {/* Google AdSense Site Verification */}
+        <meta name="google-adsense-account" content="ca-pub-9040874024446421" />
         
         {/* Open Graph */}
         <meta property="og:type" content="website" />
