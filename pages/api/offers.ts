@@ -122,7 +122,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fallback to JSON file if MongoDB is not available
     try {
     if (req.method === 'GET') {
-        const filePath = path.join(process.cwd(), 'data', 'offers.json');
+      // Prefer /tmp in serverless (e.g., Vercel), fallback to repo data
+      const candidatePaths = [
+        path.join('/tmp', 'unlockvault', 'offers.json'),
+        path.join(process.cwd(), 'data', 'offers.json')
+      ];
+      const filePath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[1];
         const fileContents = fs.readFileSync(filePath, 'utf8');
         const allOffers: Offer[] = JSON.parse(fileContents);
 
@@ -173,4 +178,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(500).json({ message: 'Internal server error' });
     }
   }
-} 
+}

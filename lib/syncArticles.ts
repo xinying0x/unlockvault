@@ -3,7 +3,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { cache } from './cache';
 
-const ARTICLES_FILE = path.join(process.cwd(), 'data', 'articles.json');
+// Resolve a writable data directory for serverless environments (e.g., Vercel)
+const isVercel = !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'unlockvault') : path.join(process.cwd(), 'data');
+const ARTICLES_FILE = path.join(DATA_DIR, 'articles.json');
 
 export interface ArticleData {
   id: string;
@@ -57,7 +60,7 @@ export async function syncArticlesToFile(): Promise<void> {
     const dataDir = path.dirname(ARTICLES_FILE);
     await fs.mkdir(dataDir, { recursive: true });
     
-    // Write to JSON file
+    // Write to JSON file (use /tmp on Vercel)
     await fs.writeFile(ARTICLES_FILE, JSON.stringify(transformedArticles, null, 2));
     
     // Clear all search cache
@@ -104,12 +107,25 @@ export async function getArticlesSyncStatus(): Promise<{
     let lastSync = null;
     
     try {
-      const fileContents = await fs.readFile(ARTICLES_FILE, 'utf8');
+      // Prefer /tmp file on Vercel if available; otherwise fallback to repo data file
+      const tmpPath = path.join('/tmp', 'unlockvault', 'articles.json');
+      const repoPath = path.join(process.cwd(), 'data', 'articles.json');
+
+      let filePathToRead = repoPath;
+      try {
+        const tmpStats = await fs.stat(tmpPath);
+        if (tmpStats && tmpStats.isFile()) {
+          filePathToRead = tmpPath;
+        }
+      } catch {
+        // tmp file not found; keep repo path
+      }
+
+      const fileContents = await fs.readFile(filePathToRead, 'utf8');
       const articles = JSON.parse(fileContents);
-      fileCount = articles.length;
-      
-      // Get file modification time
-      const stats = await fs.stat(ARTICLES_FILE);
+      fileCount = Array.isArray(articles) ? articles.length : 0;
+
+      const stats = await fs.stat(filePathToRead);
       lastSync = stats.mtime.toISOString();
     } catch (error) {
       // File doesn't exist or is corrupted
@@ -158,4 +174,4 @@ export async function syncAllContent(): Promise<void> {
     console.error('❌ Error during full content sync:', error);
     throw error;
   }
-} 
+}

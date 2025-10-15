@@ -41,7 +41,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     if (!query || typeof query !== 'string') {
       let allItems: SearchItem[] = [];
       const toolsPath = path.join(process.cwd(), 'data', 'tools.json');
-      const offersPath = path.join(process.cwd(), 'data', 'offers.json');
+      const offerPaths = [
+        path.join('/tmp', 'unlockvault', 'offers.json'),
+        path.join(process.cwd(), 'data', 'offers.json')
+      ];
+      const offersPath = offerPaths.find(p => fs.existsSync(p)) || offerPaths[1];
 
       if (fs.existsSync(toolsPath)) {
         const toolsData = fs.readFileSync(toolsPath, 'utf8');
@@ -78,7 +82,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Read tools and offers data
     const toolsPath = path.join(process.cwd(), 'data', 'tools.json');
-    const offersPath = path.join(process.cwd(), 'data', 'offers.json');
+    const offerPaths = [
+      path.join('/tmp', 'unlockvault', 'offers.json'),
+      path.join(process.cwd(), 'data', 'offers.json')
+    ];
+    const offersPath = offerPaths.find(p => fs.existsSync(p)) || offerPaths[1];
     let allItems: SearchItem[] = [];
 
     if (fs.existsSync(toolsPath)) {
@@ -154,4 +162,4 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     console.error('Search error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

@@ -3,7 +3,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { cache } from './cache';
 
-const OFFERS_FILE = path.join(process.cwd(), 'data', 'offers.json');
+// Resolve a writable data directory for serverless environments (e.g., Vercel)
+const isVercel = !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'unlockvault') : path.join(process.cwd(), 'data');
+const OFFERS_FILE = path.join(DATA_DIR, 'offers.json');
 
 export interface OfferData {
   id: string;
@@ -63,7 +66,7 @@ export async function syncOffersToFile(): Promise<void> {
     const dataDir = path.dirname(OFFERS_FILE);
     await fs.mkdir(dataDir, { recursive: true });
     
-    // Write to JSON file
+    // Write to JSON file (use /tmp on Vercel)
     await fs.writeFile(OFFERS_FILE, JSON.stringify(transformedOffers, null, 2));
     
     // Clear all search cache
@@ -110,12 +113,25 @@ export async function getOffersSyncStatus(): Promise<{
     let lastSync = null;
     
     try {
-      const fileContents = await fs.readFile(OFFERS_FILE, 'utf8');
+      // Prefer /tmp file on Vercel if available; otherwise fallback to repo data file
+      const tmpPath = path.join('/tmp', 'unlockvault', 'offers.json');
+      const repoPath = path.join(process.cwd(), 'data', 'offers.json');
+
+      let filePathToRead = repoPath;
+      try {
+        const tmpStats = await fs.stat(tmpPath);
+        if (tmpStats && tmpStats.isFile()) {
+          filePathToRead = tmpPath;
+        }
+      } catch {
+        // tmp file not found; keep repo path
+      }
+
+      const fileContents = await fs.readFile(filePathToRead, 'utf8');
       const offers = JSON.parse(fileContents);
-      fileCount = offers.length;
-      
-      // Get file modification time
-      const stats = await fs.stat(OFFERS_FILE);
+      fileCount = Array.isArray(offers) ? offers.length : 0;
+
+      const stats = await fs.stat(filePathToRead);
       lastSync = stats.mtime.toISOString();
     } catch (error) {
       // File doesn't exist or is corrupted
@@ -140,4 +156,4 @@ export async function getOffersSyncStatus(): Promise<{
       needsSync: true
     };
   }
-} 
+}

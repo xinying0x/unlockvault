@@ -2,7 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs/promises';
 import path from 'path';
 
-const OFFERS_FILE = path.resolve(process.cwd(), 'data', 'offers.json');
+// Use writable dir on Vercel, else repo data directory
+const isVercel = !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'unlockvault') : path.join(process.cwd(), 'data');
+const OFFERS_FILE = path.join(DATA_DIR, 'offers.json');
 
 interface Offer {
   id: string;
@@ -45,4 +48,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Allow', ['DELETE']);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-} 
+}

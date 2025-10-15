@@ -2,7 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs/promises';
 import path from 'path';
 
-const OFFERS_FILE = path.resolve(process.cwd(), 'data', 'offers.json');
+// Use writable dir on Vercel, else repo data directory
+const isVercel = !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'unlockvault') : path.join(process.cwd(), 'data');
+const OFFERS_FILE = path.join(DATA_DIR, 'offers.json');
 
 interface Offer {
   id: string;
@@ -33,4 +36,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error fetching offers from offers.json:', error);
     return res.status(500).json({ error: 'Failed to load offers' });
   }
-} 
+}

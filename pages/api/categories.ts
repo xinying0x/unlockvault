@@ -70,11 +70,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (dbError) {
       console.error('MongoDB error, falling back to JSON:', dbError);
       
-      // Fallback to JSON files
+      // Fallback to JSON files: prefer /tmp for dynamic content, fallback to repo data
+      const categoriesPath = path.join(process.cwd(), 'data', 'categories.json');
+      const articlesPaths = [
+        path.join('/tmp', 'unlockvault', 'articles.json'),
+        path.join(process.cwd(), 'data', 'articles.json'),
+      ];
+      const offersPaths = [
+        path.join('/tmp', 'unlockvault', 'offers.json'),
+        path.join(process.cwd(), 'data', 'offers.json'),
+      ];
+      const articlesPath = articlesPaths.find((p) => fs.existsSync(p)) || articlesPaths[1];
+      const offersPath = offersPaths.find((p) => fs.existsSync(p)) || offersPaths[1];
+
       const [categoriesData, articlesData, offersData] = await Promise.all([
-        fs.promises.readFile(path.join(process.cwd(), 'data', 'categories.json'), 'utf8'),
-        fs.promises.readFile(path.join(process.cwd(), 'data', 'articles.json'), 'utf8'),
-        fs.promises.readFile(path.join(process.cwd(), 'data', 'offers.json'), 'utf8')
+        fs.promises.readFile(categoriesPath, 'utf8'),
+        fs.promises.readFile(articlesPath, 'utf8'),
+        fs.promises.readFile(offersPath, 'utf8')
       ]);
 
       const categories = JSON.parse(categoriesData);
@@ -119,4 +131,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Categories API error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

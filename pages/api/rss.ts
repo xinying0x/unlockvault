@@ -122,9 +122,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let articles: Article[] = [];
     let offers: Offer[] = [];
 
-    // Try to read articles from file
+    // Try to read articles from file (prefer /tmp on serverless)
     try {
-      const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
+      const articlePaths = [
+        path.join('/tmp', 'unlockvault', 'articles.json'),
+        path.join(process.cwd(), 'data', 'articles.json')
+      ];
+      const articlesPath = articlePaths.find(p => fs.existsSync(p)) || articlePaths[1];
       if (fs.existsSync(articlesPath)) {
         const articlesData = fs.readFileSync(articlesPath, 'utf8');
         articles = JSON.parse(articlesData);
@@ -133,9 +137,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Could not read articles data:', error);
     }
 
-    // Try to read offers from file
+    // Try to read offers from file (prefer /tmp on serverless)
     try {
-      const offersPath = path.join(process.cwd(), 'data', 'offers.json');
+      const offerPaths = [
+        path.join('/tmp', 'unlockvault', 'offers.json'),
+        path.join(process.cwd(), 'data', 'offers.json')
+      ];
+      const offersPath = offerPaths.find(p => fs.existsSync(p)) || offerPaths[1];
       if (fs.existsSync(offersPath)) {
         const offersData = fs.readFileSync(offersPath, 'utf8');
         offers = JSON.parse(offersData);
@@ -153,4 +161,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error generating RSS feed:', error);
     res.status(500).json({ message: 'Error generating RSS feed' });
   }
-} 
+}

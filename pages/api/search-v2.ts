@@ -203,7 +203,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Search offers from JSON
       if (!type || type === 'offer' || type === 'all') {
-        const offersPath = path.join(process.cwd(), 'data', 'offers.json');
+        // Prefer /tmp on serverless (e.g., Vercel), fallback to repo data
+        const offersPaths = [
+          path.join('/tmp', 'unlockvault', 'offers.json'),
+          path.join(process.cwd(), 'data', 'offers.json'),
+        ];
+        const offersPath = offersPaths.find((p) => fs.existsSync(p)) || offersPaths[1];
         const offersContent = fs.readFileSync(offersPath, 'utf8');
         const offers: Offer[] = JSON.parse(offersContent);
 
@@ -240,7 +245,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Search articles from JSON
       if (!type || type === 'article' || type === 'all') {
-        const articlesPath = path.join(process.cwd(), 'data', 'articles.json');
+        // Prefer /tmp on serverless (e.g., Vercel), fallback to repo data
+        const articlesPaths = [
+          path.join('/tmp', 'unlockvault', 'articles.json'),
+          path.join(process.cwd(), 'data', 'articles.json'),
+        ];
+        const articlesPath = articlesPaths.find((p) => fs.existsSync(p)) || articlesPaths[1];
         const articlesContent = fs.readFileSync(articlesPath, 'utf8');
         const articles: Article[] = JSON.parse(articlesContent);
 
@@ -304,4 +314,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(500).json({ message: 'Search service temporarily unavailable' });
     }
   }
-} 
+}
