@@ -234,21 +234,7 @@ export default function Document() {
           }}
         />
         
-        {/* Adsterra Advertisement Scripts */}
-        <script
-          type='text/javascript'
-          src='//pl26969556.profitableratecpm.com/37/1d/25/371d25654ccae832cb32f47b040d26ff.js'
-          async
-          onError={() => console.warn('Adsterra script 1 blocked or failed to load')}
-        />
-        
-        {/* Adsterra Additional Advertisement Script */}
-        <script
-          type='text/javascript'
-          src='//www.profitableratecpm.com/byi5ype2a9?key=273b2aafb26c4332440b8d5a3677cfe3'
-          async
-          onError={() => console.warn('Adsterra script 2 blocked or failed to load')}
-        />
+        {/* Removed third-party ad scripts to prevent unwanted popups */}
         
         {/* Preload Critical Resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -258,8 +244,6 @@ export default function Document() {
         <link rel="preconnect" href="https://static.hotjar.com" />
         <link rel="preconnect" href="https://insights.hotjar.com" />
         <link rel="preconnect" href="https://www.clarity.ms" />
-        <link rel="preconnect" href="//pl26969556.profitableratecpm.com" />
-        <link rel="preconnect" href="//www.profitableratecpm.com" />
         
         {/* Dynamic Title Script */}
         <script
@@ -315,4 +299,4 @@ export default function Document() {
       </body>
     </Html>
   );
-} 
+}
