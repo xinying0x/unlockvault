@@ -4,6 +4,7 @@ import { MongoClient } from 'mongodb';
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/unlockvault';
 const dbName = process.env.MONGODB_DB || 'unlockvault';
 const options = {
+  appName: 'unlockvault.vercel.integration',
   connectTimeoutMS: 10000, // 10 seconds
   socketTimeoutMS: 45000,  // 45 seconds
   maxPoolSize: 50,
@@ -29,6 +30,17 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   // In production mode, it's best to not use a global variable.
   client = new MongoClient(uri, options);
+  // Attach the client to ensure proper cleanup on function suspension in Vercel
+  // Safely attempt to import and call attachDatabasePool if available
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const vercelFunctions = require('@vercel/functions');
+    if (vercelFunctions && typeof vercelFunctions.attachDatabasePool === 'function') {
+      vercelFunctions.attachDatabasePool(client);
+    }
+  } catch (e) {
+    // If @vercel/functions isn't available, continue without attaching
+  }
   clientPromise = client.connect();
 }
 
@@ -72,4 +84,4 @@ export async function safeDbOperation<T>(operation: () => Promise<T>, fallbackVa
   }
 }
 
-export default clientPromise; 
+export default clientPromise;
