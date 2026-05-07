@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import AdminLayout from '../../components/AdminLayout';
 import { copyToClipboard } from '../../lib/copyToClipboard';
 
@@ -26,18 +25,34 @@ interface Offer {
 interface QRResult {
   qrCode: string;
   cpaLink: string;
+  pageName: string;
   offerTitle: string;
   offerType: string;
   offerImage: string;
+  offerSlug: string;
 }
 
 const QRGenerator: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [qrResult, setQrResult] = useState<QRResult | null>(null);
   const [error, setError] = useState('');
   const [generatedCount, setGeneratedCount] = useState(0);
+
+  const filteredOffers = offers.filter((offer) => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return (
+      offer.title.toLowerCase().includes(term) ||
+      offer.slug.toLowerCase().includes(term) ||
+      offer.category.toLowerCase().includes(term) ||
+      offer.type.toLowerCase().includes(term)
+    );
+  });
+
+  const selectedOfferData = offers.find((offer) => offer.slug === selectedOffer || offer.id === selectedOffer);
 
   useEffect(() => {
     fetchOffers();
@@ -72,7 +87,7 @@ const QRGenerator: React.FC = () => {
         body: JSON.stringify({
           offerId: selectedOffer,
           type: 'offer',
-          siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+          siteUrl: 'https://www.unlockvault.xyz',
         }),
       });
 
@@ -106,7 +121,7 @@ const QRGenerator: React.FC = () => {
   const handleDownloadQR = () => {
     if (qrResult?.qrCode) {
       const link = document.createElement('a');
-      link.download = `qr-${qrResult.offerTitle}.png`;
+      link.download = `qr-unlock-${qrResult.offerSlug || qrResult.offerTitle}.png`;
       link.href = qrResult.qrCode;
       link.click();
     }
@@ -139,12 +154,6 @@ const QRGenerator: React.FC = () => {
               <span className="text-purple-400 font-semibold">Generated:</span>{' '}
               <span className="text-white text-xl font-bold">{generatedCount}</span>
             </div>
-            <Link
-              href="/scan-qr"
-              className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white rounded-lg transition-colors font-semibold"
-            >
-              Scan QR Page
-            </Link>
           </div>
         </div>
 
@@ -169,7 +178,7 @@ const QRGenerator: React.FC = () => {
             <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <span>📝</span>
-                Select Offer
+                Select Game, App, or Tool
               </h2>
 
               {/* Search/Filter */}
@@ -177,36 +186,39 @@ const QRGenerator: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Search offers..."
-                  onChange={(e) => {
-                    const term = e.target.value.toLowerCase();
-                    const filtered = offers.filter(
-                      (o) =>
-                        o.title.toLowerCase().includes(term) ||
-                        o.category.toLowerCase().includes(term)
-                    );
-                    setOffers(filtered);
-                  }}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-3 bg-[#1C1535]/50 border border-purple-900/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
                 />
               </div>
 
+              {selectedOfferData && (
+                <div className="mb-4 rounded-xl border border-green-500/20 bg-green-500/10 p-4">
+                  <p className="text-xs uppercase tracking-wider text-green-300 mb-1">Selected unlock page</p>
+                  <h3 className="text-white font-bold truncate">Unlock {selectedOfferData.title}</h3>
+                  <code className="mt-2 block text-xs text-green-200 break-all">
+                    https://www.unlockvault.xyz/unlock/{selectedOfferData.slug}
+                  </code>
+                </div>
+              )}
+
               {/* Offers Dropdown */}
               <div className="max-h-96 overflow-y-auto space-y-2 custom-scrollbar">
-                {offers.length === 0 ? (
+                {filteredOffers.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No offers available
                   </div>
                 ) : (
-                  offers.map((offer) => (
+                  filteredOffers.map((offer) => (
                     <div
                       key={offer.id}
                       onClick={() => {
-                        setSelectedOffer(offer.id);
+                        setSelectedOffer(offer.slug || offer.id);
                         setQrResult(null);
                         setError('');
                       }}
                       className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                        selectedOffer === offer.id
+                        selectedOffer === offer.slug || selectedOffer === offer.id
                           ? 'bg-gradient-to-r from-purple-600/30 to-pink-600/30 border border-purple-500/50'
                           : 'hover:bg-[#1C1535]/50 border border-transparent'
                       }`}
@@ -230,7 +242,7 @@ const QRGenerator: React.FC = () => {
                           <span>{offer.category}</span>
                         </div>
                       </div>
-                      {selectedOffer === offer.id && (
+                      {(selectedOffer === offer.slug || selectedOffer === offer.id) && (
                         <div className="text-purple-400">
                           ✓
                         </div>
@@ -268,7 +280,7 @@ const QRGenerator: React.FC = () => {
                 )}
               </button>
               <p className="text-xs text-gray-500 mt-3 text-center">
-                This will create a QR code that redirects to a CPA Content Locker page
+                This creates a QR code for the public Unlock page, not a localhost link.
               </p>
             </div>
 
@@ -283,7 +295,7 @@ const QRGenerator: React.FC = () => {
                 <li>Click "Generate QR Code"</li>
                 <li>Download or copy the QR code</li>
                 <li>Upload to TikTok/Instagram/Reels</li>
-                <li>Users scan and go to Content Locker</li>
+                <li>Users scan and open the offer unlock page</li>
               </ol>
             </div>
           </div>
@@ -327,15 +339,15 @@ const QRGenerator: React.FC = () => {
                     {/* QR Info */}
                     <div className="text-center w-full">
                       <h3 className="text-white text-xl font-bold mb-2 truncate">
-                        {qrResult.offerTitle}
+                        {qrResult.pageName || `Unlock ${qrResult.offerTitle}`}
                       </h3>
                       <p className="text-gray-400 text-sm mb-4">
-                        {qrResult.offerType.toUpperCase()} • CPA Content Locker
+                        {qrResult.offerType.toUpperCase()} • Direct Unlock Page
                       </p>
 
                       {/* CPA Link */}
                       <div className="bg-[#1C1535]/50 rounded-lg p-3 mb-4 w-full overflow-x-auto">
-                        <p className="text-xs text-gray-400 mb-2">CPA Link:</p>
+                        <p className="text-xs text-gray-400 mb-2">Unlock Page Link:</p>
                         <div className="flex items-center gap-2">
                           <code className="text-sm text-blue-400 break-all">
                             {qrResult.cpaLink}

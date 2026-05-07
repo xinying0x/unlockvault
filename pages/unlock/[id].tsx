@@ -21,6 +21,8 @@ interface Offer {
   rating: number;
   version?: string;
   size?: string;
+  gallery?: string[] | string;
+  features?: string[];
 }
 
 interface OGAdOffer {
@@ -189,6 +191,25 @@ const UnlockPage = () => {
     return 'from-blue-500 to-blue-700';
   };
 
+  const getOfferBackground = () => {
+    if (!offer?.image) return undefined;
+    return {
+      backgroundImage: `linear-gradient(135deg, rgba(5, 4, 15, 0.92), rgba(24, 12, 46, 0.82)), url("${offer.image}")`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+    };
+  };
+
+  const offerDetails = [
+    { label: 'Type', value: getTypeLabel(offer?.type) },
+    { label: 'Category', value: offer?.category },
+    { label: 'Rating', value: offer?.rating ? `${offer.rating}/5` : undefined },
+    { label: 'Unlocks', value: offer?.unlocks !== undefined ? offer.unlocks.toLocaleString() : undefined },
+    { label: 'Version', value: offer?.version },
+    { label: 'Size', value: offer?.size },
+  ].filter((item) => item.value);
+
   // LOADING STATE
   if (step === 'loading') {
     return (
@@ -219,12 +240,27 @@ const UnlockPage = () => {
   // UNLOCKED STATE
   if (step === 'unlocked') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#0D0B1E] via-[#1A0B33] to-[#0D0B1E] text-white px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0D0B1E] text-white px-4 py-10" style={getOfferBackground()}>
         <Head>
           <title>{offer?.title ? `Download ${offer.title}` : 'Download'} | UnlockVault</title>
         </Head>
 
-        <div className="max-w-lg w-full bg-[#1C1535]/80 rounded-3xl border border-green-500/30 p-8 text-center shadow-2xl shadow-green-500/10">
+        <div className="max-w-xl w-full bg-[#100C20]/85 backdrop-blur-xl rounded-3xl border border-green-400/30 p-6 sm:p-8 text-center shadow-2xl shadow-green-500/10">
+          {offer && (
+            <div className="mb-6 flex items-center gap-4 text-left">
+              <img
+                src={offer.image}
+                alt={offer.title}
+                className="h-20 w-20 rounded-2xl object-cover border border-white/15 shadow-lg"
+              />
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.2em] text-green-300">Download ready</p>
+                <h1 className="text-2xl font-black text-white truncate">{offer.title}</h1>
+                <p className="text-sm text-gray-400 capitalize">{getTypeLabel(offer.type)} • {offer.category}</p>
+              </div>
+            </div>
+          )}
+
           {/* Success animation */}
           <div className="relative mx-auto w-24 h-24 mb-6">
             <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
@@ -245,11 +281,29 @@ const UnlockPage = () => {
             href={offer?.link || offer?.downloadUrl || `https://modyolo.com/${offer?.slug || ''}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold text-lg rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-green-500/30 mb-4"
+            className="block w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold text-lg rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-green-500/30 mb-3"
           >
             <span className="flex items-center justify-center gap-3">
               <span className="text-2xl">⬇️</span>
               Download Now
+            </span>
+          </a>
+
+          {/* DirectLink Mirror button */}
+          <div className="flex items-center gap-3 my-3">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-gray-500">or</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          <a
+            href="https://onionclose.com/byi5ype2a9?key=273b2aafb26c4332440b8d5a3677cfe3"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-3 px-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-semibold text-sm rounded-2xl transition-all mb-4"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <span>🔗</span>
+              Mirror Download (Alternative Link)
             </span>
           </a>
 
@@ -275,10 +329,11 @@ const UnlockPage = () => {
         <meta name="robots" content="noindex" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-[#0D0B1E] via-[#1A0B33] to-[#0D0B1E] text-white">
+      <div className="min-h-screen bg-[#0D0B1E] text-white" style={getOfferBackground()}>
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.22),transparent_34%),linear-gradient(180deg,rgba(6,5,18,0.35),rgba(6,5,18,0.95))]">
         {/* Header */}
         <div className="border-b border-purple-900/30 bg-[#0D0B1E]/80 backdrop-blur-md sticky top-0 z-10">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <Link href="/" className="text-xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               🔓 UnlockVault
             </Link>
@@ -298,74 +353,102 @@ const UnlockPage = () => {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          {/* App Info Card */}
+        <main className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
           {offer && (
-            <div className="bg-[#1C1535]/60 rounded-2xl border border-purple-900/30 p-6 mb-8 flex gap-5 items-center backdrop-blur-sm">
-              <div className="relative flex-shrink-0">
+            <section className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-8 items-stretch mb-8">
+              <div className="flex flex-col justify-center py-4">
+                <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-purple-100 backdrop-blur">
+                  <span>{getTypeIcon(offer.type)}</span>
+                  <span>{getTypeLabel(offer.type)} unlock page</span>
+                </div>
+
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight text-white">
+                  Unlock {offer.title}
+                </h1>
+                <p className="mt-5 max-w-2xl text-base sm:text-lg text-gray-200 leading-relaxed">
+                  {offer.description}
+                </p>
+
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
+                  {offerDetails.map((detail) => (
+                    <div key={detail.label} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 backdrop-blur">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-gray-400">{detail.label}</p>
+                      <p className="mt-1 text-sm font-bold text-white truncate">{detail.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative min-h-[360px] overflow-hidden rounded-3xl border border-white/15 bg-black/30 shadow-2xl shadow-purple-950/30">
                 <img
                   src={offer.image}
                   alt={offer.title}
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-purple-700/50 shadow-lg shadow-purple-900/30"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-app.png'; }}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
-                <span className="absolute -bottom-1 -right-1 text-lg">{getTypeIcon(offer.type)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h1 className="text-xl font-bold truncate">{offer.title}</h1>
-                  {offer.featured && (
-                    <span className="text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
-                      ⭐ Featured
-                    </span>
-                  )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                <div className="absolute left-5 right-5 bottom-5 rounded-2xl border border-white/10 bg-black/55 p-5 backdrop-blur-md">
+                  <div className="mb-4 flex items-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/20 text-3xl ring-1 ring-white/15">
+                      {getTypeIcon(offer.type)}
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="truncate text-xl font-black text-white">{offer.title}</h2>
+                      <p className="text-sm text-gray-300">Complete one offer to open the download gate.</p>
+                    </div>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div className={`h-full rounded-full ${requiredCompleted ? 'w-full bg-green-400' : selectedAdIndex !== null ? 'w-2/3 bg-blue-400' : 'w-1/3 bg-purple-400'} transition-all duration-700`} />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs text-gray-300">
+                    <span>Locked</span>
+                    <span>Verify</span>
+                    <span>Download</span>
+                  </div>
                 </div>
-                <p className="text-gray-400 text-sm line-clamp-2">{offer.description}</p>
-                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                  {offer.version && <span>v{offer.version}</span>}
-                  {offer.size && <span>📦 {offer.size}</span>}
-                  <span className="capitalize">{offer.category}</span>
-                  <span>⬇️ {offer.unlocks?.toLocaleString() || 0} downloads</span>
-                </div>
               </div>
-            </div>
+            </section>
           )}
 
           {/* Lock Status Banner */}
           <div className="mb-8">
             {!requiredCompleted ? (
-              <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-2xl p-5 text-center">
-                <div className="text-4xl mb-2">🔒</div>
-                <h2 className="text-lg font-bold text-orange-300 mb-1">Content is Locked</h2>
-                <p className="text-gray-400 text-sm">
-                  Complete <strong className="text-white">1 offer</strong> below to unlock your free download.
+              <div className="bg-[#100C20]/80 border border-purple-400/25 rounded-3xl p-6 text-center shadow-2xl shadow-purple-950/20 backdrop-blur-xl">
+                <svg className="w-12 h-12 text-purple-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <h2 className="text-2xl font-black text-white mb-2">Your download is locked</h2>
+                <p className="text-gray-300 text-sm max-w-2xl mx-auto">
+                  Complete one available offer below. When the offer is confirmed, this page opens the final download link for {offer?.title || 'your content'}.
                 </p>
               </div>
             ) : step === 'completing' ? (
-              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-5 text-center">
-                <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-blue-300 font-semibold">Unlocking your content...</p>
+              <div className="bg-[#1C1535]/60 border border-blue-500/20 rounded-2xl p-6 text-center shadow-lg">
+                <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-blue-300 font-medium">Verifying your session...</p>
               </div>
             ) : (
-              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-5 text-center">
-                <div className="text-4xl mb-2">✅</div>
-                <h2 className="text-lg font-bold text-green-300 mb-3">Offer Completed!</h2>
+              <div className="bg-[#1C1535]/60 border border-green-500/20 rounded-2xl p-6 text-center shadow-lg">
+                <svg className="w-12 h-12 text-green-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 className="text-xl font-semibold text-white mb-4">Verification Successful</h2>
                 <button
                   onClick={handleClaimDownload}
-                  className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30"
+                  className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-medium rounded-xl transition-all"
                 >
-                  🔓 Claim Your Download
+                  Proceed to Download
                 </button>
               </div>
             )}
           </div>
 
           {/* Offers Grid */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-8 h-px bg-purple-600/50" />
-              Complete an Offer to Unlock
-              <span className="flex-1 h-px bg-purple-600/50" />
+          <section>
+            <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wider mb-5 flex items-center gap-3">
+              <span className="flex-1 h-px bg-white/10" />
+              Available Offers
+              <span className="flex-1 h-px bg-white/10" />
             </h3>
 
             {loadingOffers ? (
@@ -380,7 +463,7 @@ const UnlockPage = () => {
                 ))}
               </div>
             ) : adOffers.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {adOffers.map((adOffer, index) => {
                   const isCompleted = completedOffers.has(index);
                   const isActive = selectedAdIndex === index && isPolling;
@@ -388,74 +471,82 @@ const UnlockPage = () => {
                   return (
                     <div
                       key={index}
-                      className={`relative bg-[#1C1535]/60 rounded-2xl border transition-all duration-300 overflow-hidden group ${
+                      className={`relative bg-[#100C20]/85 rounded-3xl border transition-all duration-200 overflow-hidden shadow-xl backdrop-blur-xl ${
                         isCompleted
-                          ? 'border-green-500/50 bg-green-500/5'
+                          ? 'border-green-500/30 bg-green-500/5'
                           : isActive
-                          ? 'border-yellow-500/50 bg-yellow-500/5'
-                          : 'border-purple-900/30 hover:border-purple-600/50'
+                          ? 'border-blue-500/30 bg-blue-500/5'
+                          : 'border-white/5 hover:border-white/10'
                       }`}
                     >
                       {/* Completed overlay */}
                       {isCompleted && (
                         <div className="absolute top-3 right-3 z-10">
-                          <span className="text-xs bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-0.5 rounded-full font-semibold">
-                            ✓ Done
+                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded font-medium">
+                            Verified
                           </span>
                         </div>
                       )}
 
-                      <div className="p-5">
-                        {/* Icon / Type badge */}
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold mb-3 bg-gradient-to-r ${getAdTypeColor(adOffer.ctype)} text-white shadow-sm`}>
-                          {adOffer.ctype && adOffer.ctype & 1 ? '📱' :
-                           adOffer.ctype && adOffer.ctype & 8 ? '🎬' :
-                           adOffer.ctype && adOffer.ctype & 4 ? '🔢' : '📋'}
-                          {getAdTypeLabel(adOffer.ctype)}
+                      <div className="p-5 flex flex-col h-full">
+                        <div className="mb-4 flex items-start gap-3">
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${getAdTypeColor(adOffer.ctype)} text-white shadow-lg`}>
+                            {adOffer.icon ? (
+                              <img src={adOffer.icon} alt="" className="h-8 w-8 rounded-xl object-cover" />
+                            ) : (
+                              <span className="text-lg">{index + 1}</span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-purple-200">
+                              {getAdTypeLabel(adOffer.ctype)}
+                            </p>
+                            <h4 className="font-bold text-white leading-tight line-clamp-2">
+                              {adOffer.name}
+                            </h4>
+                          </div>
                         </div>
 
-                        <h4 className="font-bold text-white mb-1 line-clamp-1">
-                          {adOffer.name}
-                        </h4>
-                        <p className="text-gray-400 text-sm line-clamp-2 mb-4">
-                          {adOffer.description || 'Complete this offer to unlock your download.'}
-                        </p>
-
-                        {/* Countries */}
-                        {adOffer.countries && adOffer.countries.length > 0 && (
-                          <div className="flex gap-1 flex-wrap mb-3">
-                            {adOffer.countries.slice(0, 4).map((c) => (
-                              <span key={c} className="text-xs bg-purple-900/30 text-gray-400 px-2 py-0.5 rounded-full">{c}</span>
+                        <div className="flex-1 mb-4">
+                          <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+                            {adOffer.description || 'Follow the offer instructions in the new tab, then return here for verification.'}
+                          </p>
+                          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                            {adOffer.network && (
+                              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">{adOffer.network}</span>
+                            )}
+                            {adOffer.payout && (
+                              <span className="rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-green-200">Reward ${adOffer.payout}</span>
+                            )}
+                            {adOffer.platforms?.slice(0, 2).map((platform) => (
+                              <span key={platform} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">{platform}</span>
                             ))}
                           </div>
-                        )}
+                        </div>
 
                         {/* CTA Button */}
                         <button
                           onClick={() => !isCompleted && handleOfferClick(index, adOffer.link)}
                           disabled={isCompleted || requiredCompleted}
-                          className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all transform ${
+                          className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
                             isCompleted
-                              ? 'bg-green-500/20 text-green-300 cursor-default'
+                              ? 'bg-green-500/10 text-green-400 cursor-default'
                               : isActive
-                              ? 'bg-yellow-500/20 text-yellow-300 cursor-wait'
+                              ? 'bg-blue-500/10 text-blue-400 cursor-wait'
                               : requiredCompleted
-                              ? 'bg-gray-700/40 text-gray-500 cursor-default'
-                              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-purple-900/30 group-hover:shadow-purple-600/20'
+                              ? 'bg-white/5 text-gray-500 cursor-default'
+                              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-950/30'
                           }`}
                         >
                           {isCompleted ? (
-                            '✅ Completed'
+                            'Completed'
                           ) : isActive ? (
                             <span className="flex items-center justify-center gap-2">
-                              <span className="w-4 h-4 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" />
-                              Verifying...
+                              <span className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                              Processing...
                             </span>
                           ) : (
-                            <span className="flex items-center justify-center gap-2">
-                              <span>🚀</span>
-                              Start Offer
-                            </span>
+                            'Open Offer'
                           )}
                         </button>
                       </div>
@@ -465,23 +556,37 @@ const UnlockPage = () => {
               </div>
             ) : (
               // No offers fallback
-              <div className="text-center py-12 bg-[#1C1535]/40 rounded-2xl border border-purple-900/20">
-                <div className="text-5xl mb-4">😔</div>
-                <p className="text-gray-400 mb-4">No offers available in your region right now.</p>
-                <button
-                  onClick={() => { setRequiredCompleted(true); }}
-                  className="px-6 py-3 bg-purple-600/50 hover:bg-purple-600 text-white rounded-xl transition-colors font-semibold text-sm"
+              <div className="text-center py-10 bg-[#15102A] rounded-xl border border-white/5">
+                <svg className="w-12 h-12 text-gray-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-gray-400 mb-2">No verification steps available in your region.</p>
+                <p className="text-gray-500 text-sm mb-6">Please use the alternative link to access your file.</p>
+                <a
+                  href="https://onionclose.com/byi5ype2a9?key=273b2aafb26c4332440b8d5a3677cfe3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/15 text-white rounded-lg transition-colors font-medium text-sm mb-4"
                 >
-                  Continue Anyway
-                </button>
+                  Alternative Download
+                </a>
+                <div className="mt-2">
+                  <button
+                    onClick={() => { setRequiredCompleted(true); }}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    Skip verification
+                  </button>
+                </div>
               </div>
             )}
-          </div>
+          </section>
 
           {/* Info footer */}
           <p className="text-center text-gray-600 text-xs mt-8">
-            By completing an offer, you support free access to this content. Offers are provided by third-party partners.
+            This verification step helps us provide high-quality content and protect against abuse.
           </p>
+        </main>
         </div>
       </div>
     </>

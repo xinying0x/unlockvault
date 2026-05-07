@@ -3,6 +3,7 @@ import Link from 'next/link';
 import SEOHead from '../components/SEOHead';
 import UnlockCard from '../components/UnlockCard';
 import { useToast } from '../components/ToastProvider';
+import AdBanner from '../components/AdBanner';
 
 interface Offer {
   id: string;
@@ -282,6 +283,9 @@ const GamesPage: React.FC = () => {
               />
             ))}
           </div>
+
+          {/* Ad Banner between grid and pagination */}
+          <AdBanner position="inline" className="px-1" />
 
           {/* الترقيم */}
           {totalPages > 1 && (

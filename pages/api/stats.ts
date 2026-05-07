@@ -69,35 +69,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json(stats)
   } catch (error) {
     console.error('Stats API error:', error)
-    
-    // Fallback to dummy stats when MongoDB is not available
-    const dummyStats = {
-      totalOffers: 2,
-      totalUsers: 125000,
-      totalViews: 331,
-      totalUnlocks: 54,
-      totalVisits: 1250000,
-      todayVisits: 2450,
-      totalTestimonials: 48,
-      uniqueVisitors: 87500,
-      recentTools: [
-        {
-          id: 'dummy-1',
-          title: 'Adobe Photoshop 2024',
-          views: 1520,
-          unlocks: 832,
-          addedAt: new Date().toISOString()
-        },
-        {
-          id: 'dummy-2',
-          title: 'Microsoft Office 365',
-          views: 2150,
-          unlocks: 1043,
-          addedAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
-        }
-      ]
-    };
 
-    res.status(200).json(dummyStats)
+    res.status(200).json({
+      totalOffers: 0,
+      totalViews: 0,
+      totalUnlocks: 0,
+      totalVisits: 0,
+      todayVisits: 0,
+      totalTestimonials: 0,
+      uniqueVisitors: 0,
+      recentTools: []
+    })
   }
 }

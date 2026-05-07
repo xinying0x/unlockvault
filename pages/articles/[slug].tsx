@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Article } from '../../types';
 import { copyToClipboard as fallbackCopy } from '../../lib/copyToClipboard';
+import AdBanner from '../../components/AdBanner';
 
 interface SocialSettings {
   facebook: string;
@@ -510,6 +511,9 @@ const ArticleDetailPage = () => {
               />
             </div>
           </article>
+
+          {/* Ad Banner after article */}
+          <AdBanner position="inline" />
 
           {/* Call-to-Action Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">

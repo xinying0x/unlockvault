@@ -7,33 +7,6 @@ declare global {
   var rateLimitStore: Map<string, { count: number; resetTime: number }> | undefined;
 }
 
-// Sample countries with realistic IP ranges
-const sampleData = [
-  { country: 'Saudi Arabia', ipPrefix: '188.245' },
-  { country: 'United States', ipPrefix: '74.125' },
-  { country: 'United Kingdom', ipPrefix: '81.2' },
-  { country: 'Germany', ipPrefix: '85.214' },
-  { country: 'France', ipPrefix: '90.84' },
-  { country: 'Egypt', ipPrefix: '156.202' },
-  { country: 'UAE', ipPrefix: '5.62' },
-  { country: 'Canada', ipPrefix: '142.103' },
-  { country: 'Australia', ipPrefix: '101.164' },
-  { country: 'Japan', ipPrefix: '133.242' },
-  { country: 'India', ipPrefix: '117.239' },
-  { country: 'Brazil', ipPrefix: '177.43' },
-  { country: 'Turkey', ipPrefix: '78.188' },
-  { country: 'Morocco', ipPrefix: '41.250' },
-  { country: 'Algeria', ipPrefix: '41.111' },
-  { country: 'Tunisia', ipPrefix: '197.14' },
-  { country: 'Jordan', ipPrefix: '176.241' },
-  { country: 'Lebanon', ipPrefix: '178.135' },
-  { country: 'Iraq', ipPrefix: '37.236' },
-  { country: 'Kuwait', ipPrefix: '37.36' },
-  { country: 'Qatar', ipPrefix: '37.210' },
-  { country: 'Oman', ipPrefix: '5.36' },
-  { country: 'Bahrain', ipPrefix: '37.131' }
-];
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -125,17 +98,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let country, finalIp, vpn = false;
 
     if (isLocalIP) {
-      // For local/development IPs, use sample data
-      const randomData = sampleData[Math.floor(Math.random() * sampleData.length)];
-      country = randomData.country;
-      
-      // Generate a realistic-looking IP based on country prefix
-      const suffix1 = Math.floor(Math.random() * 255);
-      const suffix2 = Math.floor(Math.random() * 255);
-      finalIp = `${randomData.ipPrefix}.${suffix1}.${suffix2}`;
-      
-      // Random chance for VPN (15% chance)
-      vpn = Math.random() < 0.15;
+      country = 'Local Development';
+      finalIp = cleanIp || '127.0.0.1';
+      vpn = false;
     } else {
       // For real IPs, use actual geolocation via ipwho.is API
       finalIp = cleanIp;
@@ -192,7 +157,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         acceptLanguage: req.headers['accept-language'] || null,
         acceptEncoding: req.headers['accept-encoding'] || null,
         dnt: req.headers['dnt'] || null
-      }
+      },
+      isLocalDevelopment: isLocalIP
     };
 
     await collection.insertOne(visitData);

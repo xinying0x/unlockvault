@@ -159,91 +159,20 @@ export default function Document() {
           }}
         />
         
-        {/* Hotjar Tracking Code with Error Handling */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                (function(h,o,t,j,a,r){
-                  h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-                  h._hjSettings={hjid:6438859,hjsv:6};
-                  a=o.getElementsByTagName('head')[0];
-                  r=o.createElement('script');r.async=1;
-                  r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-                  r.onerror = function() {
-                    console.warn('Hotjar script blocked by ad blocker');
-                  };
-                  a.appendChild(r);
-                })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-                console.log('Hotjar tracking initialized');
-              } catch (error) {
-                console.warn('Hotjar failed to load:', error);
-              }
-            `
-          }}
-        />
+
         
-        {/* Microsoft Clarity Tracking Code with Error Handling */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                (function(c,l,a,r,i,t,y){
-                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                  t.onerror = function() {
-                    console.warn('Microsoft Clarity script blocked by ad blocker');
-                  };
-                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-                })(window, document, "clarity", "script", "s1facumamm");
-                console.log('Microsoft Clarity tracking initialized');
-              } catch (error) {
-                console.warn('Microsoft Clarity failed to load:', error);
-              }
-            `
-          }}
-        />
+
         
-        {/* Analytics Fallback Detection */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Check if analytics are blocked and provide fallback
-              setTimeout(function() {
-                const analyticsBlocked = {
-                  gtag: typeof window.gtag === 'undefined',
-                  hotjar: typeof window.hj === 'undefined',
-                  clarity: typeof window.clarity === 'undefined'
-                };
-                
-                if (analyticsBlocked.gtag || analyticsBlocked.hotjar || analyticsBlocked.clarity) {
-                  console.warn('Some analytics services are blocked:', analyticsBlocked);
-                  
-                  // Send notification to server about blocked analytics
-                  if (navigator.sendBeacon) {
-                    navigator.sendBeacon('/api/analytics', JSON.stringify({
-                      event: 'analytics_blocked',
-                      blocked: analyticsBlocked,
-                      userAgent: navigator.userAgent,
-                      timestamp: new Date().toISOString()
-                    }));
-                  }
-                }
-              }, 3000);
-            `
-          }}
-        />
+
         
-        {/* Removed third-party ad scripts to prevent unwanted popups */}
-        
+        {/* Adsterra Ads - Anti-Adblock Popunder */}
+        <script async src="https://onionclose.com/37/1d/25/371d25654ccae832cb32f47b040d26ff.js"></script>
         {/* Preload Critical Resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
-        <link rel="preconnect" href="https://static.hotjar.com" />
-        <link rel="preconnect" href="https://insights.hotjar.com" />
-        <link rel="preconnect" href="https://www.clarity.ms" />
+
         
         {/* Dynamic Title Script */}
         <script

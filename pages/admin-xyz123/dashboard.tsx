@@ -1,472 +1,253 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { useRouter } from 'next/router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  BarElement,
-} from 'chart.js';
+import { useRouter } from 'next/router';
 import AdminLayout from '../../components/AdminLayout';
 import ActivityFeed from '../../components/ActivityFeed';
+import { useAuth } from '../../hooks/useAuth';
 
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  BarElement
-);
-
-interface Tool {
+interface Offer {
   id: string;
-  slug: string;
+  slug?: string;
   title: string;
-  description: string;
-  image: string;
-  category: string;
-  type: string;
-  lockerLinks: { [key: string]: string };
-  views: number;
-  unlocks: number;
-  keywords: string[];
-  addedAt: string;
-  featured?: boolean;
+  type?: string;
+  category?: string;
+  status?: string;
+  views?: number;
+  unlocks?: number;
+  addedAt?: string;
 }
 
-interface RecentActivity {
+interface Article {
   id: string;
-  type: 'view' | 'unlock' | 'new_offer' | 'user_signup';
-  description: string;
-  timestamp: string;
-  user?: string;
-  offer?: string;
-}
-
-interface DashboardStats {
-  totalOffers: number;
-  totalViews: number;
-  totalUnlocks: number;
-  totalUsers: number;
-  todayViews: number;
-  todayUnlocks: number;
-  conversionRate: number;
-  revenue: number;
-  weeklyGrowth: number;
-  monthlyGrowth: number;
-  activeUsers: number;
-  bounceRate: number;
-  uniqueIPs: number;
-  totalVisits: number;
-  vpnUsers: number;
-  botTraffic: number;
-  adBlockUsers: number;
-  countries: { [key: string]: number };
-  browsers: { [key: string]: number };
-  devices: { [key: string]: number };
-  trafficSources: { [key: string]: number };
-  // Articles stats
-  totalArticles: number;
-  publishedArticles: number;
-  draftArticles: number;
-  totalArticleViews: number;
-  todayArticleViews: number;
-  searchIndexed: number;
-}
-
-interface QuickAction {
   title: string;
-  description: string;
-  icon: string;
-  href: string;
-  color: string;
-  count?: number;
-  badge?: string;
+  published?: boolean;
+  views?: number;
 }
 
-interface VisitStats {
-  totalVisits: number;
-  uniqueIPs: number;
-  todayVisits: number;
-  vpnUsers: number;
-  botTraffic: number;
-  adBlockUsers: number;
-  countries: { [key: string]: number };
-  browsers: { [key: string]: number };
-  devices: { [key: string]: number };
-  trafficSources: { [key: string]: number };
+interface StatsResponse {
+  totalOffers?: number;
+  totalViews?: number;
+  totalUnlocks?: number;
+  totalVisits?: number;
+  todayVisits?: number;
+  uniqueVisitors?: number;
 }
 
-interface DashboardData {
-  totalViews: number;
-  totalUnlocks: number;
-  conversionRate: number;
-  totalUsers: number;
-  vpnUsers: number;
-  dailyStats: Array<{
-    timestamp: string;
-    _count: {
-      id: number;
-    };
-  }>;
-  recentTools: Array<{
-    id: string;
-    title: string;
-    views: number;
-    unlocks: number;
-  }>;
-  totalOffers: number;
-  todayViews: number;
-  todayUnlocks: number;
-  revenue: number;
-  recentActivity: any[];
-  topOffers: Array<{
-    id: string;
-    title: string;
-    views: number;
-    unlocks: number;
-    conversionRate: number;
-  }>;
-  geographicData: Array<{
-    country: string;
-    views: number;
-    percentage: number;
-  }>;
-  deviceData: Array<{
-    device: string;
-    users: number;
-    percentage: number;
-  }>;
-  trafficSources: Array<{
-    source: string;
-    users: number;
-    percentage: number;
-  }>;
-  viewsByBrowser: Array<{
-    browser: string;
-    users: number;
-    percentage: number;
-  }>;
-  viewsByOS: Array<{
-    os: string;
-    users: number;
-    percentage: number;
-  }>;
-  viewsByCountry: Array<{
-    country: string;
-    views: number;
-    percentage: number;
-  }>;
-  viewsByDevice: Array<{
-    device: string;
-    users: number;
-    percentage: number;
-  }>;
+interface VisitStatsResponse {
+  totalVisits?: number;
+  uniqueIPs?: number;
+  todayVisits?: number;
+  vpnUsers?: number;
+  botTraffic?: number;
+  adBlockUsers?: number;
+  countries?: Record<string, number>;
+  browsers?: Record<string, number>;
+  devices?: Record<string, number>;
+  trafficSources?: Record<string, number>;
 }
 
-const AdminDashboard: React.FC = () => {
+interface DashboardState {
+  offers: Offer[];
+  articles: Article[];
+  stats: StatsResponse;
+  visits: VisitStatsResponse;
+}
+
+interface AdsterraItem {
+  date?: string;
+  revenue?: number;
+  impression?: number;
+  clicks?: number;
+  ctr?: number;
+  cpm?: number;
+}
+
+interface AdsterraStats {
+  configured?: boolean;
+  items?: AdsterraItem[];
+  error?: string;
+}
+
+const emptyDashboard: DashboardState = {
+  offers: [],
+  articles: [],
+  stats: {},
+  visits: {},
+};
+
+export default function AdminDashboard() {
   const { user, loading, isAuthChecked } = useAuth();
   const router = useRouter();
+  const [data, setData] = useState<DashboardState>(emptyDashboard);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalOffers: 0,
-    totalViews: 0,
-    totalUnlocks: 0,
-    totalUsers: 125000,
-    todayViews: 0,
-    todayUnlocks: 0,
-    conversionRate: 0,
-    revenue: 0,
-    weeklyGrowth: 0,
-    monthlyGrowth: 0,
-    activeUsers: 0,
-    bounceRate: 0,
-    uniqueIPs: 0,
-    totalVisits: 0,
-    vpnUsers: 0,
-    botTraffic: 0,
-    adBlockUsers: 0,
-    countries: {},
-    browsers: {},
-    devices: {},
-    trafficSources: {},
-    // Articles stats
-    totalArticles: 0,
-    publishedArticles: 0,
-    draftArticles: 0,
-    totalArticleViews: 0,
-    todayArticleViews: 0,
-    searchIndexed: 0
-  });
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [error, setError] = useState('');
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [adsterra, setAdsterra] = useState<AdsterraStats | null>(null);
 
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isLoading && !refreshing) {
-        fetchDashboardData(true);
-      }
-    }, 300000); // 5 minutes
+  const formatNumber = (value?: number | null) => {
+    const number = Number(value || 0);
+    if (number >= 1000000) return `${(number / 1000000).toFixed(1)}M`;
+    if (number >= 1000) return `${(number / 1000).toFixed(1)}K`;
+    return number.toString();
+  };
 
-    return () => clearInterval(interval);
-  }, [isLoading, refreshing]);
-
-  useEffect(() => {
-    if (!router.isReady) return;
-
-    if (!isAuthChecked) {
-      return;
-    }
-
-    if (!user) {
-      router.push('/admin-xyz123/login');
-      return;
-    }
-
-    fetchDashboardData();
-  }, [user, loading, router, isAuthChecked]);
-
-  const fetchDashboardData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
+  const loadDashboard = useCallback(async (silent = false) => {
+    if (silent) {
       setRefreshing(true);
     } else {
-    setIsLoading(true);
+      setIsLoading(true);
     }
-    
+    setError('');
+
     try {
-      const [statsRes, activityRes, visitStatsRes, articlesRes, offersRes] = await Promise.all([
+      const [statsRes, visitsRes, offersRes, articlesRes, adsterraRes] = await Promise.all([
         fetch('/api/stats'),
-        fetch('/api/activity'),
         fetch('/api/visit-stats'),
+        fetch('/api/offers'),
         fetch('/api/articles?published=all'),
-        fetch('/api/offers')
+        fetch('/api/adsterra/stats').catch(() => null),
       ]);
 
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        let visitData: Partial<VisitStats> = {};
-        let articlesData: any[] = [];
-        let offersData: any[] = [];
-        
-        if (visitStatsRes.ok) {
-          visitData = await visitStatsRes.json();
-        }
-        
-        if (articlesRes.ok) {
-          const articlesResponse = await articlesRes.json();
-          // Handle both array response and paginated response format
-          if (Array.isArray(articlesResponse)) {
-            articlesData = articlesResponse;
-          } else if (articlesResponse.articles && Array.isArray(articlesResponse.articles)) {
-            articlesData = articlesResponse.articles;
-          } else {
-            console.error('Unexpected articles API response format:', articlesResponse);
-            articlesData = [];
-          }
-        }
-        
-        if (offersRes.ok) {
-          offersData = await offersRes.json();
-        }
-        
-        // Ensure articlesData contains valid objects
-        const validArticles = Array.isArray(articlesData) 
-          ? articlesData.filter(a => a && typeof a === 'object')
+      const stats = statsRes.ok ? await statsRes.json() : {};
+      const visits = visitsRes.ok ? await visitsRes.json() : {};
+      const offers = offersRes.ok ? await offersRes.json() : [];
+      const articlesPayload = articlesRes.ok ? await articlesRes.json() : [];
+      const articles = Array.isArray(articlesPayload)
+        ? articlesPayload
+        : Array.isArray(articlesPayload.articles)
+          ? articlesPayload.articles
           : [];
-        
-        // Calculate articles statistics
-        const totalArticles = validArticles.length;
-        const publishedArticles = validArticles.filter(a => a.published).length;
-        const draftArticles = totalArticles - publishedArticles;
-        const totalArticleViews = validArticles.reduce((sum, a) => sum + (a.views || 0), 0);
-        const todayArticleViews = Math.floor(totalArticleViews * 0.1); // Estimate
-        const searchIndexed = publishedArticles + (Array.isArray(offersData) ? offersData.filter(o => o && o.status === 'active').length : 0);
-        
-        setStats(prev => ({
-          ...prev,
-          ...statsData,
-          ...visitData,
-          totalVisits: visitData.totalVisits || 0,
-          uniqueIPs: visitData.uniqueIPs || 0,
-          vpnUsers: visitData.vpnUsers || 0,
-          botTraffic: visitData.botTraffic || 0,
-          adBlockUsers: visitData.adBlockUsers || 0,
-          countries: visitData.countries || {},
-          browsers: visitData.browsers || {},
-          devices: visitData.devices || {},
-          trafficSources: visitData.trafficSources || {},
-          activeUsers: visitData.uniqueIPs ? Math.round(visitData.uniqueIPs * 0.15) : Math.floor((statsData.totalUsers || 125000) * 0.15),
-          weeklyGrowth: Math.floor(Math.random() * 20) + 5,
-          monthlyGrowth: Math.floor(Math.random() * 50) + 10,
-          bounceRate: Math.floor(Math.random() * 30) + 20,
-          // Articles stats
-          totalArticles,
-          publishedArticles,
-          draftArticles,
-          totalArticleViews,
-          todayArticleViews,
-          searchIndexed
-        }));
-      }
+      const adsterraPayload = adsterraRes?.ok ? await adsterraRes.json() : null;
 
-      if (activityRes.ok) {
-        const activityData = await activityRes.json();
-        setRecentActivity(activityData);
-      }
-
+      setData({
+        stats,
+        visits,
+        offers: Array.isArray(offers) ? offers : [],
+        articles: Array.isArray(articles) ? articles : [],
+      });
+      setAdsterra(adsterraPayload);
       setLastRefresh(new Date());
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please try again.');
+    } catch (err) {
+      console.error('Dashboard load failed:', err);
+      setError('Could not load dashboard data.');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  const formatNumber = (num: number | undefined | null) => {
-    if (num === undefined || num === null || isNaN(num)) return '0';
-    const numValue = Number(num);
-    if (numValue >= 1000000) return (numValue / 1000000).toFixed(1) + 'M';
-    if (numValue >= 1000) return (numValue / 1000).toFixed(1) + 'K';
-    return numValue.toString();
-  };
-
-  const quickActions: QuickAction[] = useMemo(() => [
-    {
-      title: 'Add New Offer',
-      description: 'Create a new tool, app, or game offer',
-      icon: '➕',
-      href: '/admin-xyz123/new',
-      color: 'from-green-500 to-emerald-600',
-      count: stats.totalOffers,
-      badge: 'New'
-    },
-    {
-      title: 'Manage Offers',
-      description: 'Edit, delete, or feature existing offers',
-      icon: '📝',
-      href: '/admin-xyz123/manage',
-      color: 'from-blue-500 to-cyan-600',
-      badge: `${stats.totalOffers} Items`
-    },
-    {
-      title: 'Articles & Blog',
-      description: 'Manage blog articles and content',
-      icon: '📄',
-      href: '/admin-xyz123/articles',
-      color: 'from-indigo-500 to-purple-600',
-      count: stats.totalArticles,
-      badge: `${stats.publishedArticles} Published`
-    },
-    {
-      title: 'Analytics',
-      description: 'View detailed analytics and reports',
-      icon: '📊',
-      href: '/admin-xyz123/visitors',
-      color: 'from-purple-500 to-violet-600',
-      badge: 'Live'
-    },
-    {
-      title: 'Security Settings',
-      description: 'Change admin credentials and security',
-      icon: '🛡️',
-      href: '/admin-xyz123/security',
-      color: 'from-red-500 to-pink-600',
-      badge: 'Secure'
-    },
-    {
-      title: 'Site Settings',
-      description: 'Configure site-wide settings',
-      icon: '⚙️',
-      href: '/admin-xyz123/settings',
-      color: 'from-yellow-500 to-orange-600'
-    },
-    {
-      title: 'QR Generator',
-      description: 'Generate QR codes for offers with CPA',
-      icon: '📱',
-      href: '/admin-xyz123/qr-generator',
-      color: 'from-cyan-500 to-blue-600',
-      badge: 'New'
+  useEffect(() => {
+    if (!router.isReady || !isAuthChecked) return;
+    if (!user) {
+      router.push('/admin-xyz123/login');
+      return;
     }
-  ], [stats.totalOffers]);
+    loadDashboard();
+  }, [isAuthChecked, loadDashboard, router, user]);
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'unlock': return '🔓';
-      case 'view': return '👁️';
-      case 'new_offer': return '✨';
-      case 'user_signup': return '👤';
-      default: return '📝';
-    }
-  };
+  const realStats = useMemo(() => {
+    const activeOffers = data.offers.filter((offer) => (offer.status || 'active') === 'active');
+    const totalViews = data.stats.totalViews ?? activeOffers.reduce((sum, offer) => sum + Number(offer.views || 0), 0);
+    const totalUnlocks = data.stats.totalUnlocks ?? activeOffers.reduce((sum, offer) => sum + Number(offer.unlocks || 0), 0);
+    const publishedArticles = data.articles.filter((article) => article.published).length;
+    const articleViews = data.articles.reduce((sum, article) => sum + Number(article.views || 0), 0);
 
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'unlock': return 'text-green-400';
-      case 'view': return 'text-blue-400';
-      case 'new_offer': return 'text-purple-400';
-      case 'user_signup': return 'text-yellow-400';
-      default: return 'text-gray-400';
-    }
-  };
+    return {
+      activeOffers: data.stats.totalOffers ?? activeOffers.length,
+      totalViews,
+      totalUnlocks,
+      conversionRate: totalViews > 0 ? (totalUnlocks / totalViews) * 100 : 0,
+      totalVisits: data.visits.totalVisits ?? data.stats.totalVisits ?? 0,
+      todayVisits: data.visits.todayVisits ?? data.stats.todayVisits ?? 0,
+      uniqueVisitors: data.visits.uniqueIPs ?? data.stats.uniqueVisitors ?? 0,
+      botTraffic: data.visits.botTraffic ?? 0,
+      vpnUsers: data.visits.vpnUsers ?? 0,
+      adBlockUsers: data.visits.adBlockUsers ?? 0,
+      totalArticles: data.articles.length,
+      publishedArticles,
+      draftArticles: data.articles.length - publishedArticles,
+      articleViews,
+    };
+  }, [data]);
 
-  const getGrowthColor = (growth: number) => {
-    if (growth > 0) return 'text-green-400';
-    if (growth < 0) return 'text-red-400';
-    return 'text-gray-400';
-  };
+  const topOffers = useMemo(() => {
+    return [...data.offers]
+      .sort((a, b) => Number(b.unlocks || 0) - Number(a.unlocks || 0) || Number(b.views || 0) - Number(a.views || 0))
+      .slice(0, 6);
+  }, [data.offers]);
 
-  const getGrowthIcon = (growth: number) => {
-    if (growth > 0) return '📈';
-    if (growth < 0) return '📉';
-    return '➖';
-  };
+  const recentOffers = useMemo(() => {
+    return [...data.offers]
+      .sort((a, b) => new Date(b.addedAt || 0).getTime() - new Date(a.addedAt || 0).getTime())
+      .slice(0, 5);
+  }, [data.offers]);
+
+  const adsterraTotals = useMemo(() => {
+    const items = Array.isArray(adsterra?.items) ? adsterra.items : [];
+    return {
+      revenue: items.reduce((sum, item) => sum + Number(item.revenue || 0), 0),
+      impressions: items.reduce((sum, item) => sum + Number(item.impression || 0), 0),
+      clicks: items.reduce((sum, item) => sum + Number(item.clicks || 0), 0),
+      items,
+    };
+  }, [adsterra]);
+
+  const cards = [
+    {
+      title: 'Active Offers',
+      value: formatNumber(realStats.activeOffers),
+      detail: 'Games, apps, and tools',
+      color: 'border-green-500/25 bg-green-500/10',
+    },
+    {
+      title: 'Total Views',
+      value: formatNumber(realStats.totalViews),
+      detail: 'From offer records',
+      color: 'border-blue-500/25 bg-blue-500/10',
+    },
+    {
+      title: 'Unlocks',
+      value: formatNumber(realStats.totalUnlocks),
+      detail: `${realStats.conversionRate.toFixed(1)}% conversion`,
+      color: 'border-purple-500/25 bg-purple-500/10',
+    },
+    {
+      title: 'Visitors',
+      value: formatNumber(realStats.uniqueVisitors),
+      detail: `${formatNumber(realStats.todayVisits)} today`,
+      color: 'border-yellow-500/25 bg-yellow-500/10',
+    },
+    {
+      title: 'Articles',
+      value: formatNumber(realStats.totalArticles),
+      detail: `${formatNumber(realStats.publishedArticles)} published`,
+      color: 'border-indigo-500/25 bg-indigo-500/10',
+    },
+    {
+      title: 'Security Signals',
+      value: formatNumber(realStats.botTraffic + realStats.vpnUsers + realStats.adBlockUsers),
+      detail: 'Bots, VPN, and adblock',
+      color: 'border-red-500/25 bg-red-500/10',
+    },
+  ];
+
+  const actions = [
+    { title: 'Add Offer', href: '/admin-xyz123/new', note: 'Create a new unlock item' },
+    { title: 'Manage Offers', href: '/admin-xyz123/manage', note: 'Edit active content' },
+    { title: 'QR Generator', href: '/admin-xyz123/qr-generator', note: 'Create unlock QR links' },
+    { title: 'Articles', href: '/admin-xyz123/articles', note: 'Manage blog content' },
+    { title: 'Adsterra', href: '/admin-xyz123/adsterra', note: 'Revenue and ad stats' },
+    { title: 'Visitors', href: '/admin-xyz123/visitors', note: 'Inspect traffic' },
+    { title: 'Security', href: '/admin-xyz123/security', note: 'Admin credentials' },
+  ];
 
   if (loading || !isAuthChecked || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0D0B1E] flex items-center justify-center text-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mb-4"></div>
-          <p className="text-white text-lg">Loading Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6 bg-red-900/20 border border-red-500/30 rounded-xl">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-white mb-2">An error occurred</h2>
-          <p className="text-gray-400 mb-4">{error}</p>
-          <button
-            onClick={() => fetchDashboardData()}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors focus:outline-none"
-          >
-            Retry
-          </button>
+          <div className="mx-auto mb-4 h-12 w-12 rounded-full border-2 border-purple-400/30 border-t-purple-400 animate-spin" />
+          <p className="text-gray-300">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -474,531 +255,181 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <AdminLayout title="Dashboard">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              Welcome back! 👋
-            </h1>
-            <p className="text-gray-400">
-              Here's what's happening with your platform today.
-            </p>
+            <h1 className="text-3xl font-black text-white">Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-400">Only live data and working tools are shown here.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {lastRefresh && (
+              <span className="text-xs text-gray-500">Updated {lastRefresh.toLocaleTimeString()}</span>
+            )}
             <button
-              onClick={() => fetchDashboardData(true)}
+              onClick={() => loadDashboard(true)}
               disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors focus:outline-none disabled:opacity-50"
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-500 disabled:opacity-60"
             >
-              <span className={`${refreshing ? 'animate-spin' : ''}`}>🔄</span>
-              <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+              {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
-            <div className="text-xs text-gray-500">
-              Last updated: {lastRefresh.toLocaleTimeString()}
-            </div>
           </div>
-        </div>
+        </header>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 hover:border-blue-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-500/20 rounded-lg">
-                <span className="text-2xl">📊</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-blue-400">
-                  {stats.totalOffers > 0 ? '+' + Math.round((stats.totalViews / stats.totalOffers)) : '0'} Avg
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Total Views</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalViews)}
-            </p>
-            <div className="text-xs text-blue-300/70 mt-2">
-              Today: {formatNumber(stats.todayViews)}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 backdrop-blur-sm p-6 rounded-xl border border-purple-500/20 hover:border-purple-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-500/20 rounded-lg">
-                <span className="text-2xl">🔓</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-purple-400">
-                  {((stats.totalUnlocks / stats.totalViews) * 100 || 0).toFixed(1)}% CVR
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Total Unlocks</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalUnlocks)}
-            </p>
-            <div className="text-xs text-purple-300/70 mt-2">
-              Today: {formatNumber(stats.todayUnlocks)}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 backdrop-blur-sm p-6 rounded-xl border border-yellow-500/20 hover:border-yellow-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-yellow-500/20 rounded-lg">
-                <span className="text-2xl">👥</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-yellow-400">
-                  {stats.totalVisits ? formatNumber(stats.totalVisits) : 'N/A'} visits
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Unique Visitors</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.uniqueIPs || 0)}
-            </p>
-            <div className="text-xs text-yellow-300/70 mt-2">
-              Active: {formatNumber(stats.activeUsers || Math.round((stats.uniqueIPs || 0) * 0.15))}
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 backdrop-blur-sm p-6 rounded-xl border border-green-500/20 hover:border-green-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-500/20 rounded-lg">
-                <span className="text-2xl">📱</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-green-400">
-                  {formatNumber(stats.totalOffers)} offers
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Available Tools</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalOffers)}
-            </p>
-            <div className="text-xs text-green-300/70 mt-2">
-              Active and downloadable
-            </div>
-          </div>
-        </div>
-
-        {/* Articles & Content Statistics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 backdrop-blur-sm p-6 rounded-xl border border-indigo-500/20 hover:border-indigo-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-indigo-500/20 rounded-lg">
-                <span className="text-2xl">📄</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-indigo-400">
-                  {stats.totalArticles > 0 ? ((stats.publishedArticles / stats.totalArticles) * 100).toFixed(0) : '0'}% Published
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Total Articles</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalArticles)}
-            </p>
-            <div className="text-xs text-indigo-300/70 mt-2">
-              Published: {formatNumber(stats.publishedArticles)} | Drafts: {formatNumber(stats.draftArticles)}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm p-6 rounded-xl border border-emerald-500/20 hover:border-emerald-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-emerald-500/20 rounded-lg">
-                <span className="text-2xl">👁️</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-emerald-400">
-                  {stats.totalArticles > 0 ? '+' + Math.round((stats.totalArticleViews / stats.totalArticles)) : '0'} Avg
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Article Views</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalArticleViews)}
-            </p>
-            <div className="text-xs text-emerald-300/70 mt-2">
-              Today: {formatNumber(stats.todayArticleViews)}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-500/10 to-cyan-600/10 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 hover:border-blue-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-500/20 rounded-lg">
-                <span className="text-2xl">🔍</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-blue-400">
-                  Live Index
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Search Indexed</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.searchIndexed)}
-            </p>
-            <div className="text-xs text-blue-300/70 mt-2">
-              Articles: {formatNumber(stats.publishedArticles)} | Offers: {formatNumber(stats.totalOffers)}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-violet-500/10 to-pink-600/10 backdrop-blur-sm p-6 rounded-xl border border-violet-500/20 hover:border-violet-400/30 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-violet-500/20 rounded-lg">
-                <span className="text-2xl">📈</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-violet-400">
-                  {((stats.totalArticleViews / (stats.totalViews + stats.totalArticleViews || 1)) * 100).toFixed(1)}% Share
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Content Reach</h3>
-            <p className="text-3xl font-bold text-white group-hover:scale-105 transition-transform">
-              {formatNumber(stats.totalViews + stats.totalArticleViews)}
-            </p>
-            <div className="text-xs text-violet-300/70 mt-2">
-              Combined views across all content
-            </div>
-          </div>
-        </div>
-
-        {/* Detailed Visitor Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-orange-500/20 rounded-lg">
-                <span className="text-2xl">🚫</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">Bot Traffic</h3>
-                <p className="text-sm text-gray-400">Automated visits</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold text-orange-400">{formatNumber(stats.botTraffic || 0)}</span>
-              <span className="text-sm text-orange-300">
-                {stats.totalVisits > 0 ? ((stats.botTraffic / stats.totalVisits) * 100).toFixed(1) : '0'}%
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-sm p-6 rounded-xl border border-cyan-500/20">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-cyan-500/20 rounded-lg">
-                <span className="text-2xl">🔒</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">VPN Users</h3>
-                <p className="text-sm text-gray-400">Protected connections</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold text-cyan-400">{formatNumber(stats.vpnUsers || 0)}</span>
-              <span className="text-sm text-cyan-300">
-                {stats.totalVisits > 0 ? ((stats.vpnUsers / stats.totalVisits) * 100).toFixed(1) : '0'}%
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-red-500/10 to-pink-500/10 backdrop-blur-sm p-6 rounded-xl border border-red-500/20">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-red-500/20 rounded-lg">
-                <span className="text-2xl">🛡️</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">AdBlock Users</h3>
-                <p className="text-sm text-gray-400">Ad blocking enabled</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold text-red-400">{formatNumber(stats.adBlockUsers || 0)}</span>
-              <span className="text-sm text-red-300">
-                {stats.totalVisits > 0 ? ((stats.adBlockUsers / stats.totalVisits) * 100).toFixed(1) : '0'}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions Grid */}
-        <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>⚡</span>
-            <span>Quick Actions</span>
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quickActions.map((action, index) => (
-              <Link key={action.href} href={action.href}>
-                <div className={`relative bg-gradient-to-br ${action.color} p-6 rounded-xl text-white hover:scale-105 transition-all duration-300 cursor-pointer group overflow-hidden`}>
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-3xl">{action.icon}</span>
-                      {action.badge && (
-                        <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
-                          {action.badge}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-bold mb-2">{action.title}</h3>
-                    <p className="text-sm opacity-90">{action.description}</p>
-                    {action.count !== undefined && (
-                      <div className="mt-3 text-2xl font-bold">
-                        {formatNumber(action.count)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-            </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Analytics Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Performance Metrics */}
-          <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <span>📈</span>
-              <span>Performance Metrics</span>
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-300">Conversion Rate</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-white">
-                    {((stats.totalUnlocks / stats.totalViews) * 100 || 0).toFixed(2)}%
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {formatNumber(stats.totalUnlocks)} / {formatNumber(stats.totalViews)}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-gray-300">Bounce Rate</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-white">{stats.bounceRate}%</div>
-                  <div className="text-sm text-gray-400">Session quality</div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-gray-300">Active Users</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-white">{formatNumber(stats.activeUsers)}</div>
-                  <div className="text-sm text-gray-400">
-                    {((stats.activeUsers / stats.totalUsers) * 100).toFixed(1)}% of total
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Today's Overview */}
-          <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <span>🌟</span>
-              <span>Today's Overview</span>
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg border border-blue-500/20">
-                <div className="text-2xl mb-2">👁️</div>
-                <div className="text-2xl font-bold text-white">{formatNumber(stats.todayViews)}</div>
-                <div className="text-sm text-gray-400">Views Today</div>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-lg border border-green-500/20">
-                <div className="text-2xl mb-2">🔓</div>
-                <div className="text-2xl font-bold text-white">{formatNumber(stats.todayUnlocks)}</div>
-                <div className="text-sm text-gray-400">Unlocks Today</div>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg border border-purple-500/20">
-                <div className="text-2xl mb-2">💰</div>
-                <div className="text-2xl font-bold text-white">${formatNumber(stats.revenue)}</div>
-                <div className="text-sm text-gray-400">Revenue</div>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 rounded-lg border border-yellow-500/20">
-                <div className="text-2xl mb-2">📊</div>
-                <div className="text-2xl font-bold text-white">{stats.weeklyGrowth}%</div>
-                <div className="text-sm text-gray-400">Weekly Growth</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts and Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Daily Views Chart */}
-        {dashboardData && dashboardData.dailyStats && dashboardData.dailyStats.length > 0 && (
-            <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
-              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <span>📊</span>
-                <span>Daily Views Trend</span>
-              </h2>
-              <div className="w-full h-[300px]">
-              <Line
-                data={{
-                  labels: dashboardData.dailyStats.map(stat => new Date(stat.timestamp).toLocaleDateString()),
-                  datasets: [
-                    {
-                      label: 'Views',
-                      data: dashboardData.dailyStats.map(stat => stat._count.id),
-                      borderColor: 'rgb(139, 92, 246)',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                      tension: 0.4,
-                      fill: true,
-                        pointBackgroundColor: 'rgb(139, 92, 246)',
-                        pointBorderColor: 'rgb(139, 92, 246)',
-                        pointHoverBackgroundColor: 'rgb(139, 92, 246)',
-                        pointHoverBorderColor: 'rgb(255, 255, 255)',
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false },
-                    title: { display: false },
-                  },
-                  scales: {
-                      x: { 
-                        ticks: { color: '#9ca3af' }, 
-                        grid: { color: '#374151' },
-                        border: { color: '#374151' }
-                      },
-                      y: { 
-                        ticks: { color: '#9ca3af' }, 
-                        grid: { color: '#374151' },
-                        border: { color: '#374151' }
-                      },
-                    },
-                    interaction: {
-                      intersect: false,
-                      mode: 'index',
-                  },
-                }}
-              />
-            </div>
+        {error && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            {error}
           </div>
         )}
 
-          {/* Activity Feed */}
-          <ActivityFeed />
-        </div>
-
-        {/* Recent Offers */}
-        <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>🆕</span>
-            <span>Recently Added Offers</span>
-          </h2>
-          {dashboardData && dashboardData.recentTools && dashboardData.recentTools.length > 0 ? (
-            <div className="space-y-3">
-              {dashboardData.recentTools.slice(0, 5).map((offer: any) => (
-                <div key={offer.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800/70 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold truncate mb-1">{offer.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <span>👁️</span>
-                        <span>{formatNumber(offer.views)}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span>🔓</span>
-                        <span>{formatNumber(offer.unlocks)}</span>
-                      </span>
-                      {offer.addedAt && (
-                        <span className="flex items-center gap-1">
-                          <span>🕒</span>
-                          <span>{new Date(offer.addedAt).toLocaleDateString()}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 ml-4">
-                    <Link href={`/admin-xyz123/edit/${offer.id}`}>
-                      <span className="px-3 py-1 bg-purple-600/20 text-purple-400 rounded-lg text-sm hover:bg-purple-600/30 transition-colors cursor-pointer">
-                        Edit
-                      </span>
-                    </Link>
-                  </div>
-                </div>
-              ))}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          {cards.map((card) => (
+            <div key={card.title} className={`rounded-xl border p-5 ${card.color}`}>
+              <p className="text-sm font-medium text-gray-300">{card.title}</p>
+              <p className="mt-3 text-3xl font-black text-white">{card.value}</p>
+              <p className="mt-2 text-xs text-gray-400">{card.detail}</p>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">📝</div>
-              <p className="text-gray-400">No recent offers available.</p>
-              <Link href="/admin-xyz123/new">
-                <span className="inline-block mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer">
-                  Add New Offer
-                </span>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
+          <div className="rounded-xl border border-purple-900/30 bg-[#1C1535]/50 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">Top Offers</h2>
+              <Link href="/admin-xyz123/manage" className="text-sm text-purple-300 hover:text-purple-200">
+                Manage
               </Link>
             </div>
-          )}
-        </div>
 
-        {/* Top Offers */}
-        <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>🏆</span>
-            <span>Top Performing Offers</span>
-          </h2>
-          {dashboardData && dashboardData.topOffers && dashboardData.topOffers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dashboardData.topOffers.slice(0, 6).map((offer, index) => (
-                <div key={offer.id} className="bg-slate-800/50 p-4 rounded-lg hover:bg-slate-800/70 transition-colors">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                      #{index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold truncate">{offer.title}</h3>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-center p-2 bg-blue-500/10 rounded border border-blue-500/20">
-                      <div className="text-blue-400 font-bold">{formatNumber(offer.views)}</div>
-                      <div className="text-gray-400">Views</div>
-                    </div>
-                    <div className="text-center p-2 bg-green-500/10 rounded border border-green-500/20">
-                      <div className="text-green-400 font-bold">{formatNumber(offer.unlocks)}</div>
-                      <div className="text-gray-400">Unlocks</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 text-center">
-                    <div className="text-purple-400 font-bold text-lg">{offer.conversionRate}%</div>
-                    <div className="text-gray-400 text-xs">Conversion Rate</div>
-                  </div>
-                </div>
+            {topOffers.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-gray-500">
+                    <tr>
+                      <th className="py-3 pr-4">Offer</th>
+                      <th className="py-3 pr-4">Type</th>
+                      <th className="py-3 pr-4 text-right">Views</th>
+                      <th className="py-3 text-right">Unlocks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {topOffers.map((offer) => (
+                      <tr key={offer.id || offer.slug}>
+                        <td className="py-3 pr-4">
+                          <p className="font-semibold text-white">{offer.title}</p>
+                          <p className="text-xs text-gray-500">{offer.category || 'Uncategorized'}</p>
+                        </td>
+                        <td className="py-3 pr-4 capitalize text-gray-300">{offer.type || 'offer'}</td>
+                        <td className="py-3 pr-4 text-right text-gray-300">{formatNumber(offer.views)}</td>
+                        <td className="py-3 text-right font-semibold text-purple-200">{formatNumber(offer.unlocks)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-white/10 bg-black/20 p-6 text-center text-gray-400">
+                No offer data yet.
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-purple-900/30 bg-[#1C1535]/50 p-5">
+            <h2 className="mb-4 text-xl font-bold text-white">Quick Actions</h2>
+            <div className="space-y-3">
+              {actions.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="block rounded-lg border border-white/10 bg-black/20 p-4 transition hover:border-purple-400/40 hover:bg-purple-500/10"
+                >
+                  <p className="font-semibold text-white">{action.title}</p>
+                  <p className="mt-1 text-xs text-gray-500">{action.note}</p>
+                </Link>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">📊</div>
-              <p className="text-gray-400">No offers data available yet.</p>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white">Adsterra</h2>
+              <p className="text-sm text-gray-400">Last 7 days from your Adsterra API key.</p>
             </div>
+            <div className="flex items-center gap-3">
+              <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                adsterra?.configured ? 'bg-green-500/15 text-green-200' : 'bg-yellow-500/15 text-yellow-200'
+              }`}>
+                {adsterra?.configured ? 'Connected' : 'Needs API key'}
+              </span>
+              <Link href="/admin-xyz123/adsterra" className="text-sm font-semibold text-blue-200 hover:text-blue-100">
+                Open
+              </Link>
+            </div>
+          </div>
+
+          {adsterra?.configured ? (
+            <>
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Revenue</p>
+                  <p className="mt-2 text-2xl font-black text-green-300">${adsterraTotals.revenue.toFixed(2)}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Impressions</p>
+                  <p className="mt-2 text-2xl font-black text-white">{formatNumber(adsterraTotals.impressions)}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Clicks</p>
+                  <p className="mt-2 text-2xl font-black text-white">{formatNumber(adsterraTotals.clicks)}</p>
+                </div>
+              </div>
+
+              {adsterra?.error && (
+                <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  {adsterra.error}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="mt-5 rounded-lg border border-yellow-500/25 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+              Add `ADSTERRA_API_KEY` to your environment to show real Adsterra stats here.
+            </p>
           )}
-        </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-purple-900/30 bg-[#1C1535]/50 p-5">
+            <h2 className="mb-4 text-xl font-bold text-white">Recent Offers</h2>
+            {recentOffers.length > 0 ? (
+              <div className="space-y-3">
+                {recentOffers.map((offer) => (
+                  <div key={offer.id || offer.slug} className="flex items-center justify-between rounded-lg bg-black/20 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-white">{offer.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {offer.addedAt ? new Date(offer.addedAt).toLocaleDateString() : 'No date'}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/admin-xyz123/edit/${offer.id}`}
+                      className="ml-4 rounded-md bg-white/10 px-3 py-1 text-xs font-semibold text-gray-200 hover:bg-white/15"
+                    >
+                      Edit
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-white/10 bg-black/20 p-6 text-center text-gray-400">
+                No recent offers.
+              </div>
+            )}
+          </div>
+
+          <ActivityFeed />
+        </section>
       </div>
     </AdminLayout>
   );
-};
-
-export default AdminDashboard;
+}

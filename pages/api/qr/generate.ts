@@ -6,6 +6,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { connectToDatabase } from '../../../lib/mongodb';
 import QRCode from 'qrcode';
+import fs from 'fs';
+import path from 'path';
 
 interface Offer {
   id: string;
@@ -22,6 +24,21 @@ interface Offer {
   rating: number;
 }
 
+const normalizeBaseUrl = (url?: string) => {
+  const fallback = 'https://www.unlockvault.xyz';
+  const value = (url || process.env.NEXT_PUBLIC_SITE_URL || fallback).trim();
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      return fallback;
+    }
+    return parsed.origin.replace('https://unlockvault.xyz', fallback);
+  } catch {
+    return fallback;
+  }
+};
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -32,19 +49,36 @@ export default async function handler(
 
   try {
     const { offerId, type = 'offer', siteUrl } = req.body;
-    const baseUrl = siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://unlockvault.xyz';
+    const baseUrl = normalizeBaseUrl(siteUrl);
 
     // Validate input
     if (!offerId) {
       return res.status(400).json({ error: 'offerId is required' });
     }
 
-    const db = await connectToDatabase().then(({ db }) => db);
     let offer: Offer | null = null;
 
-    // Fetch offer from database
     if (type === 'offer') {
-      offer = await db.collection<Offer>('offers').findOne({ id: offerId });
+      try {
+        const db = await connectToDatabase().then(({ db }) => db);
+        offer = await db.collection<Offer>('offers').findOne({
+          $or: [{ id: offerId }, { slug: offerId }]
+        });
+      } catch (dbError) {
+        console.error('QR Generation DB lookup failed, trying JSON fallback:', dbError);
+      }
+
+      if (!offer) {
+        const candidatePaths = [
+          path.join('/tmp', 'unlockvault', 'offers.json'),
+          path.join(process.cwd(), 'data', 'offers.json')
+        ];
+        const filePath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[1];
+        if (fs.existsSync(filePath)) {
+          const offers = JSON.parse(fs.readFileSync(filePath, 'utf8')) as Offer[];
+          offer = offers.find((item) => item.id === offerId || item.slug === offerId) || null;
+        }
+      }
     }
 
     if (!offer) {
@@ -66,9 +100,11 @@ export default async function handler(
       data: {
         qrCode: qrCodeBase64,
         cpaLink: cpaLink,
+        pageName: `Unlock ${offer.title}`,
         offerTitle: offer.title,
         offerType: offer.type,
         offerImage: offer.image,
+        offerSlug: offer.slug,
       },
     });
   } catch (error: any) {

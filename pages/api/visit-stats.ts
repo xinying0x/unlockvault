@@ -44,45 +44,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json(stats);
   } catch (error) {
     console.error('Visit stats API error:', error);
-    
-    // Fallback dummy stats
-    const dummyStats = {
-      totalVisits: 1245,
-      uniqueIPs: 987,
-      todayVisits: 89,
-      vpnUsers: 187,
-      botTraffic: 45,
-      adBlockUsers: 234,
-      countries: {
-        'Saudi Arabia': 423,
-        'United States': 312,
-        'Egypt': 198,
-        'UAE': 156,
-        'United Kingdom': 143,
-        'Germany': 89,
-        'France': 76,
-        'Canada': 65
-      },
-      browsers: {
-        'Chrome': 678,
-        'Safari': 234,
-        'Firefox': 198,
-        'Edge': 89,
-        'Opera': 46
-      },
-      devices: {
-        'desktop': 789,
-        'mobile': 345,
-        'tablet': 111
-      },
-      trafficSources: {
-        'Direct': 567,
-        'Search Engine': 345,
-        'Social Media': 189,
-        'Referral': 144
-      }
-    };
 
-    res.status(200).json(dummyStats);
+    res.status(200).json({
+      totalVisits: 0,
+      uniqueIPs: 0,
+      todayVisits: 0,
+      vpnUsers: 0,
+      botTraffic: 0,
+      adBlockUsers: 0,
+      countries: {},
+      browsers: {},
+      devices: {},
+      trafficSources: {}
+    });
   }
 } 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Head from 'next/head';
 import SEOHead from '../components/SEOHead';
 import UnlockCard from '../components/UnlockCard';
+import AdBanner from '../components/AdBanner';
 import { initGA, trackPageView, trackTrafficSource } from '../lib/analytics';
 import { advancedBotDetection } from '../lib/botProtection';
 import { getHomepageStructuredData } from '../lib/structuredData';
@@ -44,6 +45,9 @@ const HomePage: React.FC = () => {
   const [latestTools, setLatestTools] = useState<Offer[]>([]);
   const [latestArticles, setLatestArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [totalOffers, setTotalOffers] = useState(0);
+  const [totalArticles, setTotalArticles] = useState(0);
 
   // Initialize Analytics and Bot Protection
   useEffect(() => {
@@ -56,6 +60,11 @@ const HomePage: React.FC = () => {
         console.warn('Bot detected:', result.reasons);
       }
     });
+
+    // Back to top scroll listener
+    const handleScroll = () => setShowBackToTop(window.scrollY > 300);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Fetch all content
@@ -82,13 +91,16 @@ const HomePage: React.FC = () => {
         setLatestGames(games);
         setLatestApps(apps);
         setLatestTools(tools);
+        setTotalOffers(offers.length);
       }
       
       // Fetch articles
       const articlesResponse = await fetch('/api/articles?limit=4');
       if (articlesResponse.ok) {
         const articles = await articlesResponse.json();
-        setLatestArticles(articles);
+        const arr = Array.isArray(articles) ? articles : articles.articles || [];
+        setLatestArticles(arr.slice(0, 4));
+        setTotalArticles(arr.length);
       }
       
     } catch (error) {
@@ -166,49 +178,81 @@ const HomePage: React.FC = () => {
 
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
-          <div className="relative z-10 text-center max-w-6xl mx-auto">
-            <div className="mb-8 animate-fade-in">
-              <div className="inline-block p-4 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 rounded-full mb-6 backdrop-blur-sm border border-purple-500/30">
-                <span className="text-6xl animate-bounce">🔓</span>
-              </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
-                Unlock Premium Tools & Apps for Free
-              </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed">
-              Discover premium games, apps, tools, and exclusive content. Your gateway to unlimited possibilities.
-              </p>
+          <div className="relative z-10 text-center max-w-5xl mx-auto">
+
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 text-xs font-medium mb-8 tracking-wide">
+              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
+              Free — No account required
             </div>
 
+            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight">
+              Modded Apps &amp; Games,{' '}
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                unlocked.
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Scan a QR code or browse our catalog to get premium apps, games, and tools — no subscription needed.
+            </p>
+
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <Link
-              href="/search"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/25"
+              href="/scan-qr"
+              className="inline-flex items-center gap-3 px-7 py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg shadow-purple-900/30"
             >
-              <span className="text-lg">🚀</span>
-              <span className="text-lg">Start Exploring</span>
-              <div className="w-2 h-2 bg-white/30 rounded-full group-hover:animate-ping"></div>
+              Scan a QR Code
             </Link>
             <Link
-              href="/articles"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-gray-800/50 hover:bg-gray-700/50 text-white font-semibold rounded-2xl transition-all duration-300 transform hover:scale-105 border border-gray-600/50 hover:border-gray-500/50"
+              href="/games"
+              className="inline-flex items-center gap-3 px-7 py-3.5 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20"
             >
-              <span className="text-lg">📄</span>
-              <span className="text-lg">Read Articles</span>
+              Browse Games
             </Link>
-                </div>
+            <Link
+              href="/apps"
+              className="inline-flex items-center gap-3 px-7 py-3.5 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20"
+            >
+              Browse Apps
+            </Link>
+          </div>
+
+          {/* Live Stats Counter */}
+          {totalOffers > 0 && (
+            <div className="flex flex-wrap justify-center gap-6 mt-12 pt-8 border-t border-white/10">
+              <div className="text-center">
+                <div className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">{totalOffers}+</div>
+                <div className="text-xs text-gray-500 mt-1">Premium Offers</div>
               </div>
-      </section>
+              <div className="w-px h-10 bg-white/10 self-center" />
+              <div className="text-center">
+                <div className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">{totalArticles}+</div>
+                <div className="text-xs text-gray-500 mt-1">Articles</div>
+              </div>
+              <div className="w-px h-10 bg-white/10 self-center" />
+              <div className="text-center">
+                <div className="text-3xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">100%</div>
+                <div className="text-xs text-gray-500 mt-1">Free</div>
+              </div>
+              <div className="w-px h-10 bg-white/10 self-center" />
+              <div className="text-center">
+                <div className="text-3xl font-extrabold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">⚡</div>
+                <div className="text-xs text-gray-500 mt-1">Instant Unlock</div>
+              </div>
+            </div>
+          )}
+          </div>
+        </section>
 
       {/* Latest Games Section */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-              🎮 Latest Games
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-white">
+              Latest Games
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Discover the newest and most exciting games added to our collection
+            <p className="text-gray-500 max-w-xl mx-auto">
+              New modded games added to the collection
             </p>
           </div>
           
@@ -250,26 +294,31 @@ const HomePage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>
-            </div>
           </div>
-        </section>
+        </div>
+      </section>
+
+      {/* Ad Banner between Games and Apps */}
+      <div className="max-w-4xl mx-auto px-4">
+        <AdBanner position="inline" />
+      </div>
 
       {/* Latest Apps Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-purple-900/20 to-indigo-900/20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              📱 Apps & Programs
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-white">
+              Apps &amp; Programs
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Essential applications and programs to boost your productivity
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Premium apps unlocked, ready to install
             </p>
-              </div>
+          </div>
           
           {latestApps.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
               {latestApps.map((app) => (
-                    <UnlockCard
+                <UnlockCard
                   key={app.id} 
                   image={app.image}
                   title={app.title}
@@ -284,40 +333,40 @@ const HomePage: React.FC = () => {
                   offerSlug={app.slug}
                   type={app.type}
                   addedAt={app.addedAt}
-                    />
-                ))}
-                  </div>
+                />
+              ))}
+            </div>
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📱</div>
               <p className="text-gray-400">No apps available at the moment</p>
-              </div>
-            )}
+            </div>
+          )}
             
           <div className="text-center">
-                <Link 
+            <Link
               href="/apps"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
-                >
+              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105"
+            >
               View All Apps
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-                </Link>
+            </Link>
           </div>
-          </div>
-        </section>
+        </div>
+      </section>
 
 
       {/* Latest Articles Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-indigo-900/20 to-purple-900/20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              📄 Latest Articles
-              </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Stay updated with the latest insights, tutorials, and tech news
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-white">
+              Latest Articles
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Guides, tutorials, and updates from the team
             </p>
           </div>
           
@@ -385,35 +434,18 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Newsletter/CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-3xl p-12 border border-purple-500/30 backdrop-blur-sm">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              Ready to Unlock Your Potential?
-            </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Join thousands of users who have already discovered the power of premium tools and content.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/search"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg"
-              >
-                <span className="text-lg">🔍</span>
-                <span>Search & Discover</span>
-              </Link>
-              <Link
-                href="/games"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-gray-800/50 hover:bg-gray-700/50 text-white font-semibold rounded-2xl transition-all duration-300 transform hover:scale-105 border border-gray-600/50"
-              >
-                <span className="text-lg">🎮</span>
-                <span>Browse Games</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Back to Top */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 z-50 w-10 h-10 bg-purple-600 hover:bg-purple-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none"
+          aria-label="Back to top"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
     </>
   );
