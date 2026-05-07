@@ -18,12 +18,7 @@ interface FloatingActionButtonProps {
 
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   actions = [
-    {
-      icon: '🔧',
-      label: 'Browse Tools',
-      href: '/tools',
-      color: 'from-blue-500 to-cyan-600'
-    },
+
     {
       icon: '📱',
       label: 'Explore Apps',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+import { copyToClipboard as fallbackCopy } from '../lib/copyToClipboard';
 interface SocialSettings {
   facebook: string;
   twitter: string;
@@ -78,7 +78,7 @@ const SocialShareButtons: React.FC<SocialShareButtonsProps> = ({ title, url, des
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await fallbackCopy(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     } catch (err) {

@@ -23,12 +23,12 @@ export default function AdminLogin() {
       setIsLoading(true);
       setError('');
       
-      const success = await login(email, password);
+      const result = await login(email, password);
       
-      if (success) {
+      if (result && result.success) {
         router.push('/admin-xyz123/dashboard');
       } else {
-        setError('Invalid credentials');
+        setError(result?.error || 'Invalid credentials');
       }
     } catch (err) {
       setError('Login failed. Please try again.');

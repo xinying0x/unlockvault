@@ -17,7 +17,7 @@ import {
 } from 'chart.js';
 import AdminLayout from '../../components/AdminLayout';
 import ActivityFeed from '../../components/ActivityFeed';
-import SyncStatusComponent from '../../components/SyncStatus';
+
 
 ChartJS.register(
   CategoryScale,
@@ -400,6 +400,14 @@ const AdminDashboard: React.FC = () => {
       icon: '⚙️',
       href: '/admin-xyz123/settings',
       color: 'from-yellow-500 to-orange-600'
+    },
+    {
+      title: 'QR Generator',
+      description: 'Generate QR codes for offers with CPA',
+      icon: '📱',
+      href: '/admin-xyz123/qr-generator',
+      color: 'from-cyan-500 to-blue-600',
+      badge: 'New'
     }
   ], [stats.totalOffers]);
 
@@ -715,9 +723,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Search Index Sync Status */}
-        <SyncStatusComponent />
 
         {/* Quick Actions Grid */}
         <div className="bg-[#2D1B5A]/50 backdrop-blur-sm p-6 rounded-xl border border-purple-900/30">

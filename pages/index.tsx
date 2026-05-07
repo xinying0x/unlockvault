@@ -308,59 +308,6 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
-      {/* Latest Tools Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-              🛠️ Professional Tools
-            </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Advanced tools and utilities for professionals and enthusiasts
-            </p>
-                </div>
-          
-          {latestTools.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-              {latestTools.map((tool) => (
-                <UnlockCard 
-                  key={tool.id} 
-                  image={tool.image}
-                  title={tool.title}
-                  description={tool.description}
-                  buttonText="Get Tool"
-                  buttonHref={`/offers/${tool.slug}`}
-                  views={tool.views}
-                  unlocks={tool.unlocks}
-                  category={tool.category}
-                  featured={tool.featured}
-                  rating={tool.rating}
-                  offerSlug={tool.slug}
-                  type={tool.type}
-                  addedAt={tool.addedAt}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🛠️</div>
-              <p className="text-gray-400">No tools available at the moment</p>
-            </div>
-          )}
-          
-          <div className="text-center">
-            <Link
-              href="/tools"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
-            >
-              View All Tools
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-            </div>
-          </div>
-        </section>
 
       {/* Latest Articles Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-indigo-900/20 to-purple-900/20">

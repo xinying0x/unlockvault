@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Article } from '../../types';
+import { copyToClipboard as fallbackCopy } from '../../lib/copyToClipboard';
 
 interface SocialSettings {
   facebook: string;
@@ -141,7 +142,7 @@ const ArticleDetailPage = () => {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await fallbackCopy(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     } catch (err) {
@@ -522,14 +523,14 @@ const ArticleDetailPage = () => {
             </div>
             
             <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-sm rounded-2xl p-8 text-center border border-blue-500/30 group hover:border-blue-400/50 transition-all duration-300">
-              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
-              <h3 className="text-2xl font-bold mb-4 text-white">Explore Our Tools</h3>
-              <p className="text-gray-300 mb-6 leading-relaxed">Discover our comprehensive collection of premium software and development tools.</p>
+              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📷</div>
+              <h3 className="text-2xl font-bold mb-4 text-white">Scan QR Code</h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">Upload a QR code to quickly unlock offers and access premium content.</p>
               <Link 
-                href="/tools" 
+                href="/scan-qr" 
                 className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
-                Browse Tools
+                Scan QR
               </Link>
             </div>
           </div>

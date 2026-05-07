@@ -419,10 +419,8 @@ const OfferDetailPage = () => {
               )}
 
               {/* Unlock Button */}
-              <a
-                href={getCpaLink()}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/unlock/${offer.slug}`}
                 onClick={async () => {
                   // Track unlock event
                   try {
@@ -452,7 +450,7 @@ const OfferDetailPage = () => {
                   <span className="text-xl animate-pulse">✨</span>
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-              </a>
+              </Link>
 
               {/* VPN Warning */}
               {isVpn && (

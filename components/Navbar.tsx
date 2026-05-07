@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
 
   const navLinks = [
     { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/tools', label: 'Tools', icon: '🛠️' },
+    { href: '/scan-qr', label: 'Scan QR', icon: '📷' },
     { href: '/apps', label: 'Apps', icon: '📱' },
     { href: '/games', label: 'Games', icon: '🎮' },
     { href: '/articles', label: 'Articles', icon: '📄' },

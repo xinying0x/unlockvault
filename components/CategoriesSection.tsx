@@ -256,10 +256,10 @@ export default function CategoriesSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/tools"
+                href="/scan-qr"
                 className="px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-400 hover:to-indigo-500 transition-all duration-300 transform hover:scale-105"
               >
-                Browse All Tools 🔧
+                Scan QR Code 📷
               </Link>
               <Link
                 href="/apps"
