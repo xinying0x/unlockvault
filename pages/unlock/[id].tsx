@@ -54,11 +54,53 @@ const UnlockPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
   const [isPolling, setIsPolling] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [generatingShortlink, setGeneratingShortlink] = useState(false);
 
   // Generate unique session ID for tracking
   useEffect(() => {
     setSessionId(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
   }, []);
+
+  // Check if returning from Shrtfly link
+  useEffect(() => {
+    if (router.query.verified === 'true') {
+      setStep('unlocked');
+      setRequiredCompleted(true);
+    }
+  }, [router.query.verified]);
+
+  // Generate Shrtfly shortlink
+  useEffect(() => {
+    const generateShortlink = async () => {
+      if (!id || typeof window === 'undefined') return;
+      
+      try {
+        setGeneratingShortlink(true);
+        // The URL we want them to return to after completing Shrtfly
+        const returnUrl = `${window.location.origin}/unlock/${id}?verified=true`;
+        
+        const res = await fetch('/api/shrtfly', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: returnUrl })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setShortUrl(data.shortUrl);
+        }
+      } catch (err) {
+        console.error('Failed to generate shortlink:', err);
+      } finally {
+        setGeneratingShortlink(false);
+      }
+    };
+
+    if (id && step !== 'unlocked' && !shortUrl) {
+      generateShortlink();
+    }
+  }, [id, step, shortUrl]);
 
   // Fetch the offer/app details
   const fetchOffer = useCallback(async (offerId: string) => {
@@ -451,133 +493,169 @@ const UnlockPage = () => {
               <span className="flex-1 h-px bg-white/10" />
             </h3>
 
-            {loadingOffers ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-[#1C1535]/50 rounded-2xl border border-purple-900/20 p-5 animate-pulse">
-                    <div className="w-12 h-12 bg-purple-900/30 rounded-xl mb-3" />
-                    <div className="h-4 bg-purple-900/30 rounded mb-2 w-3/4" />
-                    <div className="h-3 bg-purple-900/20 rounded mb-3 w-full" />
-                    <div className="h-10 bg-purple-900/20 rounded-xl" />
-                  </div>
-                ))}
-              </div>
-            ) : adOffers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {adOffers.map((adOffer, index) => {
-                  const isCompleted = completedOffers.has(index);
-                  const isActive = selectedAdIndex === index && isPolling;
-
-                  return (
-                    <div
-                      key={index}
-                      className={`relative bg-[#100C20]/85 rounded-3xl border transition-all duration-200 overflow-hidden shadow-xl backdrop-blur-xl ${
-                        isCompleted
-                          ? 'border-green-500/30 bg-green-500/5'
-                          : isActive
-                          ? 'border-blue-500/30 bg-blue-500/5'
-                          : 'border-white/5 hover:border-white/10'
-                      }`}
-                    >
-                      {/* Completed overlay */}
-                      {isCompleted && (
-                        <div className="absolute top-3 right-3 z-10">
-                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded font-medium">
-                            Verified
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="p-5 flex flex-col h-full">
-                        <div className="mb-4 flex items-start gap-3">
-                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${getAdTypeColor(adOffer.ctype)} text-white shadow-lg`}>
-                            {adOffer.icon ? (
-                              <img src={adOffer.icon} alt="" className="h-8 w-8 rounded-xl object-cover" />
-                            ) : (
-                              <span className="text-lg">{index + 1}</span>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-purple-200">
-                              {getAdTypeLabel(adOffer.ctype)}
-                            </p>
-                            <h4 className="font-bold text-white leading-tight line-clamp-2">
-                              {adOffer.name}
-                            </h4>
-                          </div>
-                        </div>
-
-                        <div className="flex-1 mb-4">
-                          <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
-                            {adOffer.description || 'Follow the offer instructions in the new tab, then return here for verification.'}
-                          </p>
-                          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                            {adOffer.network && (
-                              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">{adOffer.network}</span>
-                            )}
-                            {adOffer.payout && (
-                              <span className="rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-green-200">Reward ${adOffer.payout}</span>
-                            )}
-                            {adOffer.platforms?.slice(0, 2).map((platform) => (
-                              <span key={platform} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">{platform}</span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* CTA Button */}
-                        <button
-                          onClick={() => !isCompleted && handleOfferClick(index, adOffer.link)}
-                          disabled={isCompleted || requiredCompleted}
-                          className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-                            isCompleted
-                              ? 'bg-green-500/10 text-green-400 cursor-default'
-                              : isActive
-                              ? 'bg-blue-500/10 text-blue-400 cursor-wait'
-                              : requiredCompleted
-                              ? 'bg-white/5 text-gray-500 cursor-default'
-                              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-950/30'
-                          }`}
-                        >
-                          {isCompleted ? (
-                            'Completed'
-                          ) : isActive ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
-                              Processing...
-                            </span>
-                          ) : (
-                            'Open Offer'
-                          )}
-                        </button>
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
+              {/* 1. Shrtfly Shortlink Option (Always visible as Option 1) */}
+              <div className={`relative bg-[#100C20]/85 rounded-3xl border transition-all duration-200 overflow-hidden shadow-xl backdrop-blur-xl border-white/5 hover:border-white/10 ${requiredCompleted ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="p-5 flex flex-col h-full">
+                  <div className="mb-4 flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-600 text-white shadow-lg">
+                      <span className="text-2xl">🔗</span>
                     </div>
-                  );
-                })}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-300">
+                        Fast Verification
+                      </p>
+                      <h4 className="font-bold text-white leading-tight line-clamp-2">
+                        Visit Shortlink
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 mb-4">
+                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+                      Skip surveys! Just visit this shortened link, skip the ads, and your download will unlock instantly upon return.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3 py-1 text-indigo-200">Recommended</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">Fast</span>
+                    </div>
+                  </div>
+
+                  <a
+                    href={shortUrl || '#'}
+                    onClick={(e) => {
+                      if (!shortUrl || requiredCompleted) e.preventDefault();
+                    }}
+                    className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-all text-center block ${
+                      generatingShortlink || !shortUrl
+                        ? 'bg-white/5 text-gray-500 cursor-wait'
+                        : requiredCompleted
+                        ? 'bg-white/5 text-gray-500 cursor-default'
+                        : 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white shadow-lg shadow-indigo-950/30'
+                    }`}
+                  >
+                    {generatingShortlink || !shortUrl ? 'Generating Link...' : requiredCompleted ? 'Completed' : 'Visit Link'}
+                  </a>
+                </div>
               </div>
-            ) : (
-              // No offers fallback
+
+              {/* CPA Offers */}
+              {loadingOffers ? (
+                <>
+                  {[...Array(5)].map((_, i) => (
+                    <div key={`skeleton-${i}`} className="bg-[#1C1535]/50 rounded-2xl border border-purple-900/20 p-5 animate-pulse">
+                      <div className="w-12 h-12 bg-purple-900/30 rounded-xl mb-3" />
+                      <div className="h-4 bg-purple-900/30 rounded mb-2 w-3/4" />
+                      <div className="h-3 bg-purple-900/20 rounded mb-3 w-full" />
+                      <div className="h-10 bg-purple-900/20 rounded-xl" />
+                    </div>
+                  ))}
+                </>
+              ) : adOffers.length > 0 ? (
+                <>
+                  {adOffers.map((adOffer, index) => {
+                    const isCompleted = completedOffers.has(index);
+                    const isActive = selectedAdIndex === index && isPolling;
+
+                    return (
+                      <div
+                        key={`offer-${index}`}
+                        className={`relative bg-[#100C20]/85 rounded-3xl border transition-all duration-200 overflow-hidden shadow-xl backdrop-blur-xl ${
+                          isCompleted
+                            ? 'border-green-500/30 bg-green-500/5'
+                            : isActive
+                            ? 'border-blue-500/30 bg-blue-500/5'
+                            : 'border-white/5 hover:border-white/10'
+                        }`}
+                      >
+                        {/* Completed overlay */}
+                        {isCompleted && (
+                          <div className="absolute top-3 right-3 z-10">
+                            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded font-medium">
+                              Verified
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="p-5 flex flex-col h-full">
+                          <div className="mb-4 flex items-start gap-3">
+                            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${getAdTypeColor(adOffer.ctype)} text-white shadow-lg`}>
+                              {adOffer.icon ? (
+                                <img src={adOffer.icon} alt="" className="h-8 w-8 rounded-xl object-cover" />
+                              ) : (
+                                <span className="text-lg">{index + 1}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-purple-200">
+                                {getAdTypeLabel(adOffer.ctype)}
+                              </p>
+                              <h4 className="font-bold text-white leading-tight line-clamp-2">
+                                {adOffer.name}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="flex-1 mb-4">
+                            <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+                              {adOffer.description || 'Follow the offer instructions in the new tab, then return here for verification.'}
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                              {adOffer.network && (
+                                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">{adOffer.network}</span>
+                              )}
+                              {adOffer.payout && (
+                                <span className="rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-green-200">Reward ${adOffer.payout}</span>
+                              )}
+                              {adOffer.platforms?.slice(0, 2).map((platform) => (
+                                <span key={platform} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">{platform}</span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* CTA Button */}
+                          <button
+                            onClick={() => !isCompleted && handleOfferClick(index, adOffer.link)}
+                            disabled={isCompleted || requiredCompleted}
+                            className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+                              isCompleted
+                                ? 'bg-green-500/10 text-green-400 cursor-default'
+                                : isActive
+                                ? 'bg-blue-500/10 text-blue-400 cursor-wait'
+                                : requiredCompleted
+                                ? 'bg-white/5 text-gray-500 cursor-default'
+                                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-950/30'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              'Completed'
+                            ) : isActive ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                                Processing...
+                              </span>
+                            ) : (
+                              'Open Offer'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                <></>
+              )}
+            </div>
+
+            {!loadingOffers && adOffers.length === 0 && (
+              // No CPA offers fallback
               <div className="text-center py-10 bg-[#15102A] rounded-xl border border-white/5">
                 <svg className="w-12 h-12 text-gray-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p className="text-gray-400 mb-2">No verification steps available in your region.</p>
-                <p className="text-gray-500 text-sm mb-6">Please use the alternative link to access your file.</p>
-                <a
-                  href="https://onionclose.com/byi5ype2a9?key=273b2aafb26c4332440b8d5a3677cfe3"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/15 text-white rounded-lg transition-colors font-medium text-sm mb-4"
-                >
-                  Alternative Download
-                </a>
-                <div className="mt-2">
-                  <button
-                    onClick={() => { setRequiredCompleted(true); }}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    Skip verification
-                  </button>
-                </div>
+                <p className="text-gray-400 mb-2">No verification surveys available in your region.</p>
+                <p className="text-gray-500 text-sm mb-6">Please use the Shortlink option above to access your file.</p>
               </div>
             )}
           </section>
