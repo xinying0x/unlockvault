@@ -1,50 +1,54 @@
 import { Html, Head, Main, NextScript } from 'next/document';
 
 export default function Document() {
-  // Structured Data for better SEO
+  // Structured Data for better SEO — Organization logo + Sitelinks
+  const SITE_URL = "https://unlockvault.xyz";
+  const LOGO_URL = `${SITE_URL}/logo-512.svg`;
+
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "https://unlockvault.xyz/#organization",
+        "@id": `${SITE_URL}/#organization`,
         "name": "UnlockVault",
         "alternateName": ["Unlock Vault", "UnlockVault.xyz"],
-        "url": "https://unlockvault.xyz",
+        "url": SITE_URL,
         "logo": {
           "@type": "ImageObject",
-          "url": "https://unlockvault.xyz/logo.svg",
+          "@id": `${SITE_URL}/#logo`,
+          "inLanguage": "en-US",
+          "url": LOGO_URL,
+          "contentUrl": LOGO_URL,
           "width": 512,
-          "height": 512
+          "height": 512,
+          "caption": "UnlockVault"
         },
-        "description": "UnlockVault - Premium software, games, apps & digital tools. Unlock premium content for free.",
+        "image": { "@id": `${SITE_URL}/#logo` },
+        "description": "UnlockVault — Premium software, games, apps and digital tools. Unlock premium content for free.",
         "foundingDate": "2024",
         "sameAs": [
-          "https://unlockvault.xyz"
-        ],
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "contactType": "customer service",
-          "url": "https://unlockvault.xyz"
-        }
+          "https://twitter.com/UnlockVault",
+          "https://facebook.com/UnlockVault",
+          "https://www.instagram.com/UnlockVault",
+          "https://www.youtube.com/@UnlockVault"
+        ]
       },
       {
         "@type": "WebSite",
-        "@id": "https://unlockvault.xyz/#website",
-        "url": "https://unlockvault.xyz",
-        "name": "UnlockVault - Premium Software & Digital Tools",
-        "alternateName": ["UnlockVault", "Unlock Vault"],
-        "description": "UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free.",
-        "publisher": {
-          "@id": "https://unlockvault.xyz/#organization"
-        },
+        "@id": `${SITE_URL}/#website`,
+        "url": SITE_URL,
+        "name": "UnlockVault",
+        "alternateName": ["Unlock Vault", "UnlockVault.xyz"],
+        "description": "Discover premium software, games, applications and digital tools. Unlock premium content for free.",
+        "publisher": { "@id": `${SITE_URL}/#organization` },
         "inLanguage": "en-US",
         "potentialAction": [
           {
             "@type": "SearchAction",
             "target": {
               "@type": "EntryPoint",
-              "urlTemplate": "https://unlockvault.xyz/search?q={search_term_string}"
+              "urlTemplate": `${SITE_URL}/search?q={search_term_string}`
             },
             "query-input": "required name=search_term_string"
           }
@@ -52,31 +56,48 @@ export default function Document() {
       },
       {
         "@type": "WebPage",
-        "@id": "https://unlockvault.xyz/#webpage",
-        "url": "https://unlockvault.xyz",
-        "name": "UnlockVault - Premium Software, Games, Apps & Digital Tools",
-        "isPartOf": {
-          "@id": "https://unlockvault.xyz/#website"
-        },
-        "about": {
-          "@id": "https://unlockvault.xyz/#organization"
-        },
-        "description": "UnlockVault - Discover premium software, games, applications, and digital tools. Get access to professional software, latest games, productivity apps, and development tools. Unlock premium content for free.",
-        "breadcrumb": {
-          "@id": "https://unlockvault.xyz/#breadcrumb"
-        },
+        "@id": `${SITE_URL}/#webpage`,
+        "url": SITE_URL,
+        "name": "UnlockVault — Premium Software, Games, Apps & Digital Tools",
+        "isPartOf": { "@id": `${SITE_URL}/#website` },
+        "about": { "@id": `${SITE_URL}/#organization` },
+        "primaryImageOfPage": { "@id": `${SITE_URL}/#logo` },
+        "description": "UnlockVault — Discover premium software, games, applications and digital tools. Unlock premium content for free.",
+        "breadcrumb": { "@id": `${SITE_URL}/#breadcrumb` },
         "inLanguage": "en-US"
       },
       {
         "@type": "BreadcrumbList",
-        "@id": "https://unlockvault.xyz/#breadcrumb",
+        "@id": `${SITE_URL}/#breadcrumb`,
         "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://unlockvault.xyz"
-          }
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": SITE_URL }
+        ]
+      },
+      // Sitelinks hint — these are the main sections of the site (Apps, Games, Tools, Articles)
+      {
+        "@type": "SiteNavigationElement",
+        "@id": `${SITE_URL}/#nav`,
+        "name": ["Apps", "Games", "Tools", "Articles", "Categories", "Search"],
+        "url": [
+          `${SITE_URL}/apps`,
+          `${SITE_URL}/games`,
+          `${SITE_URL}/tools`,
+          `${SITE_URL}/articles`,
+          `${SITE_URL}/categories`,
+          `${SITE_URL}/search`
+        ]
+      },
+      {
+        "@type": "ItemList",
+        "@id": `${SITE_URL}/#sections`,
+        "name": "UnlockVault main sections",
+        "itemListOrder": "https://schema.org/ItemListOrderDescending",
+        "numberOfItems": 4,
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Apps",     "url": `${SITE_URL}/apps`,     "description": "Premium and modded apps" },
+          { "@type": "ListItem", "position": 2, "name": "Games",    "url": `${SITE_URL}/games`,    "description": "Latest premium and modded games" },
+          { "@type": "ListItem", "position": 3, "name": "Tools",    "url": `${SITE_URL}/tools`,    "description": "Professional digital tools" },
+          { "@type": "ListItem", "position": 4, "name": "Articles", "url": `${SITE_URL}/articles`, "description": "Tech articles, tutorials and reviews" }
         ]
       }
     ]
@@ -93,49 +114,47 @@ export default function Document() {
           }}
         />
 
-        {/* Additional meta tags for better search visibility */}
-        <meta name="google-site-verification" content="UnlockVault-Premium-Software-Games-Apps" />
-        <meta name="msvalidate.01" content="UnlockVault-Premium-Digital-Tools" />
-        <meta name="yandex-verification" content="UnlockVault-Software-Vault" />
-        
+        {/* NOTE: Add real verification codes here from Google/Bing Search Console */}
+        {/* <meta name="google-site-verification" content="YOUR_GOOGLE_CODE" /> */}
+        {/* <meta name="msvalidate.01" content="YOUR_BING_CODE" /> */}
+
         {/* Rich snippets support */}
         <meta property="article:publisher" content="https://unlockvault.xyz" />
-        <meta property="article:author" content="UnlockVault Team" />
-        
-        {/* Additional search keywords for partial matching */}
-        <meta name="search-title" content="UnlockVault unlock vault premium software games apps tools" />
-        <meta name="alternate-names" content="unlock vault, unlockv, unlockvault, vault software, premium vault" />
-        
-        {/* Preload critical resources */}
-        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
-        <link rel="preload" href="/favicon.ico" as="image" type="image/x-icon" />
-        
-        {/* Dynamic Favicon */}
-        <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+
+        {/* Favicons — use static logo so Google can crawl it */}
+        <link rel="icon" type="image/svg+xml" href="/logo-512.svg" />
         <link rel="alternate icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/logo.svg" />
-        
+        <link rel="apple-touch-icon" sizes="180x180" href="/logo-512.svg" />
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* Preload */}
+        <link rel="preload" href="/logo-512.svg" as="image" type="image/svg+xml" />
+
         {/* Meta Tags */}
         <meta name="theme-color" content="#8B5CF6" />
         <meta name="msapplication-TileColor" content="#8B5CF6" />
         <meta name="description" content="UnlockVault - Premium Tools, Apps & Games. Unlock exclusive content with our secure platform." />
-        <meta name="keywords" content="unlock, premium tools, apps, games, software, download" />
         <meta name="author" content="UnlockVault" />
-        {/* Google AdSense Site Verification */}
+        {/* Google AdSense */}
         <meta name="google-adsense-account" content="ca-pub-9040874024446421" />
-        
-        {/* Open Graph */}
+
+        {/* Open Graph — use absolute URLs */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="UnlockVault - Premium Tools & Apps" />
         <meta property="og:description" content="Discover and unlock premium tools, apps, and games. Your gateway to exclusive content." />
-        <meta property="og:image" content="/logo.svg" />
+        <meta property="og:image" content="https://unlockvault.xyz/logo-512.svg" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
+        <meta property="og:url" content="https://unlockvault.xyz" />
         <meta property="og:site_name" content="UnlockVault" />
-        
+        <meta property="og:locale" content="en_US" />
+
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@UnlockVault" />
         <meta name="twitter:title" content="UnlockVault - Premium Tools & Apps" />
         <meta name="twitter:description" content="Discover and unlock premium tools, apps, and games. Your gateway to exclusive content." />
-        <meta name="twitter:image" content="/logo.svg" />
+        <meta name="twitter:image" content="https://unlockvault.xyz/logo-512.svg" />
         
         {/* Google Analytics with Error Handling */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQE75NNT98" 

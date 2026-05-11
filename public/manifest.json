@@ -20,10 +20,16 @@
       "purpose": "any"
     },
     {
-      "src": "/logo.svg",
+      "src": "/logo-512.svg",
       "type": "image/svg+xml",
       "sizes": "any",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [

@@ -614,111 +614,162 @@ const UnlockPage = () => {
             {unlockMethod === 'cpa' && (
               <div className="animate-[fadeIn_0.3s_ease-out]">
                 {loadingOffers ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {[...Array(6)].map((_, i) => (
-                      <div key={`skeleton-${i}`} className="bg-[#1C1535]/50 rounded-2xl border border-purple-900/20 p-5 animate-pulse">
-                        <div className="w-14 h-14 bg-purple-900/30 rounded-xl mb-3" />
-                        <div className="h-4 bg-purple-900/30 rounded mb-2 w-3/4" />
-                        <div className="h-3 bg-purple-900/20 rounded mb-3 w-full" />
-                        <div className="h-10 bg-purple-900/20 rounded-xl" />
+                      <div key={`skeleton-${i}`} className="relative rounded-3xl border border-white/[0.04] bg-gradient-to-b from-white/[0.02] to-[#0A0714]/80 p-6 pt-14 animate-pulse">
+                        <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-purple-900/30" />
+                        <div className="flex flex-col items-center">
+                          <div className="w-16 h-16 rounded-2xl bg-purple-900/30 mb-4" />
+                          <div className="w-20 h-5 rounded-full bg-purple-900/30 mb-3" />
+                          <div className="w-full h-4 rounded bg-purple-900/20 mb-2" />
+                          <div className="w-3/4 h-4 rounded bg-purple-900/20 mb-6" />
+                          <div className="w-full h-12 rounded-2xl bg-purple-900/25" />
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : adOffers.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {adOffers.map((adOffer, index) => {
                       const isCompleted = completedOffers.has(index);
                       const isActive = selectedAdIndex === index && isPolling;
+                      const accentColor = isCompleted
+                        ? 'from-green-500 to-emerald-400'
+                        : isActive
+                        ? 'from-blue-500 to-cyan-400'
+                        : getAdTypeColor(adOffer.ctype);
+                      const accentGlow = isCompleted
+                        ? 'shadow-green-500/20'
+                        : isActive
+                        ? 'shadow-blue-500/20'
+                        : 'shadow-purple-500/20';
 
                       return (
                         <div
                           key={`offer-${index}`}
-                          className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 backdrop-blur-xl ${
+                          className={`group relative flex flex-col rounded-3xl border transition-all duration-500 hover:-translate-y-1 ${
                             isCompleted
-                              ? 'border-green-500/40 bg-gradient-to-br from-green-950/40 to-[#100C20]/85 shadow-xl shadow-green-950/30'
+                              ? 'border-green-500/30 bg-gradient-to-b from-green-950/30 via-[#0F0B1E]/90 to-[#0F0B1E]/95 shadow-2xl shadow-green-900/20'
                               : isActive
-                              ? 'border-blue-500/40 bg-gradient-to-br from-blue-950/40 to-[#100C20]/85 shadow-xl shadow-blue-950/30'
-                              : 'border-white/10 bg-gradient-to-br from-[#1A1233]/85 to-[#100C20]/85 shadow-xl hover:border-purple-400/30 hover:shadow-purple-950/40 hover:-translate-y-0.5'
+                              ? 'border-blue-500/30 bg-gradient-to-b from-blue-950/30 via-[#0F0B1E]/90 to-[#0F0B1E]/95 shadow-2xl shadow-blue-900/20'
+                              : 'border-white/[0.06] bg-gradient-to-b from-white/[0.04] via-[#0F0B1E]/80 to-[#0A0714]/90 shadow-2xl shadow-black/40 hover:border-white/15 hover:shadow-purple-500/10'
                           }`}
                         >
-                          {/* Top accent bar */}
-                          <div className={`h-1 w-full bg-gradient-to-r ${
-                            isCompleted ? 'from-green-500 to-emerald-500' :
-                            isActive ? 'from-blue-500 to-cyan-500' :
-                            getAdTypeColor(adOffer.ctype)
-                          }`} />
+                          {/* Ambient background glow */}
+                          <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br ${accentColor} opacity-[0.08] blur-3xl pointer-events-none transition-opacity duration-500 group-hover:opacity-[0.14]`} />
+                          <div className={`absolute -bottom-10 -left-10 w-28 h-28 rounded-full bg-gradient-to-br ${accentColor} opacity-[0.05] blur-3xl pointer-events-none transition-opacity duration-500 group-hover:opacity-[0.1]`} />
+
+                          {/* Inner subtle shine */}
+                          {!isCompleted && !isActive && (
+                            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/[0.03] via-transparent to-transparent pointer-events-none" />
+                          )}
+
+                          {/* Step badge */}
+                          <div className="absolute top-4 left-4 z-10">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br ${accentColor} text-white text-xs font-black shadow-lg ${accentGlow}`}>
+                              {isCompleted ? '✓' : index + 1}
+                            </div>
+                          </div>
 
                           {/* Status badge */}
                           {(isCompleted || isActive) && (
                             <div className="absolute top-4 right-4 z-10">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                              <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full backdrop-blur-md border ${
                                 isCompleted
-                                  ? 'bg-green-500/20 text-green-300 ring-1 ring-green-400/30'
-                                  : 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-400/30'
+                                  ? 'bg-green-500/15 text-green-300 border-green-400/25'
+                                  : 'bg-blue-500/15 text-blue-300 border-blue-400/25'
                               }`}>
-                                {isCompleted ? '✓ Verified' : '⏳ Pending'}
+                                {isCompleted ? (
+                                  <><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Verified</>
+                                ) : (
+                                  <><span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />Verifying</>
+                                )}
                               </span>
                             </div>
                           )}
 
-                          <div className="p-5 flex flex-col h-full">
-                            {/* Header */}
-                            <div className="mb-4 flex items-start gap-3">
-                              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${getAdTypeColor(adOffer.ctype)} text-white shadow-lg ring-1 ring-white/20 overflow-hidden`}>
+                          <div className="relative z-10 flex flex-col h-full p-6 pt-14">
+                            {/* Icon + Type */}
+                            <div className="mb-5 flex flex-col items-center text-center">
+                              <div className={`relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${accentColor} shadow-xl ${accentGlow} ring-1 ring-white/20 overflow-hidden`}>
                                 {adOffer.icon ? (
                                   <img src={adOffer.icon} alt="" className="h-full w-full object-cover" />
                                 ) : (
-                                  <span className="text-xl font-black">{index + 1}</span>
+                                  <span className="text-2xl">
+                                    {adOffer.ctype && (adOffer.ctype & 1) ? '📲'
+                                      : adOffer.ctype && (adOffer.ctype & 2) ? '✅'
+                                      : adOffer.ctype && (adOffer.ctype & 4) ? '🔐'
+                                      : adOffer.ctype && (adOffer.ctype & 8) ? '▶️'
+                                      : '🎯'}
+                                  </span>
                                 )}
+                                {/* Icon inner glow */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-purple-300 mb-0.5">
-                                  {getAdTypeLabel(adOffer.ctype)}
-                                </p>
-                                <h4 className="font-black text-white leading-tight line-clamp-2 text-base">
-                                  {adOffer.name}
-                                </h4>
-                              </div>
+                              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                                isCompleted
+                                  ? 'border-green-400/20 bg-green-400/10 text-green-300'
+                                  : isActive
+                                  ? 'border-blue-400/20 bg-blue-400/10 text-blue-300'
+                                  : 'border-purple-400/20 bg-purple-400/10 text-purple-300'
+                              }`}>
+                                {getAdTypeLabel(adOffer.ctype)}
+                              </span>
                             </div>
 
+                            {/* Title */}
+                            <h4 className="mb-3 text-center text-lg font-bold text-white leading-snug line-clamp-2">
+                              {adOffer.name}
+                            </h4>
+
                             {/* Description */}
-                            <div className="flex-1 mb-4">
-                              <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">
-                                {adOffer.description || 'Follow the instructions in the new tab, then return here for verification.'}
+                            <div className="flex-1 mb-5">
+                              <p className="text-center text-sm leading-relaxed text-gray-300/80 line-clamp-3">
+                                {adOffer.description || 'Follow the simple steps in the new tab, then return here to complete your download.'}
                               </p>
-                              {/* Payout/Network hidden for visitor privacy */}
-                            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-                                {adOffer.platforms?.slice(0, 2).map((platform) => (
-                                  <span key={platform} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-gray-400">{platform}</span>
-                                ))}
-                              </div>
+                              {adOffer.platforms && adOffer.platforms.length > 0 && (
+                                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                                  {adOffer.platforms.slice(0, 3).map((platform) => (
+                                    <span key={platform} className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-gray-400">
+                                      {platform}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
 
                             {/* CTA */}
                             <button
                               onClick={() => !isCompleted && handleOfferClick(index, adOffer.link)}
                               disabled={isCompleted || requiredCompleted}
-                              className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all ${
+                              className={`relative w-full overflow-hidden rounded-2xl py-3.5 px-5 text-sm font-bold transition-all duration-300 ${
                                 isCompleted
                                   ? 'bg-green-500/10 text-green-400 ring-1 ring-green-400/20 cursor-default'
                                   : isActive
                                   ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/20 cursor-wait'
                                   : requiredCompleted
-                                  ? 'bg-white/5 text-gray-500 cursor-default'
-                                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-950/40 group-hover:shadow-purple-900/50'
+                                  ? 'bg-white/[0.03] text-gray-600 cursor-default'
+                                  : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_auto] text-white shadow-lg shadow-purple-950/40 hover:shadow-purple-500/25 hover:bg-right active:scale-[0.98]'
                               }`}
                             >
                               {isCompleted ? (
-                                <span className="flex items-center justify-center gap-2">✓ Completed</span>
+                                <span className="flex items-center justify-center gap-2">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Done
+                                </span>
                               ) : isActive ? (
                                 <span className="flex items-center justify-center gap-2">
                                   <span className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
-                                  Verifying...
+                                  Checking...
                                 </span>
                               ) : (
                                 <span className="flex items-center justify-center gap-2">
                                   Start Task
-                                  <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                                  <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                  </svg>
                                 </span>
                               )}
                             </button>

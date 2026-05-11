@@ -1,20 +1,32 @@
-# *
 User-agent: *
 Allow: /
+Allow: /logo-512.svg
+Allow: /logo.svg
+Allow: /favicon.ico
 Disallow: /admin-xyz123/
+Disallow: /admin-xyz123
 Disallow: /api/
+Disallow: /unlock/
 Disallow: /_next/
 Disallow: /404
 Disallow: /_error
+Disallow: /vpn-blocked
+
+# Allow image crawlers (needed for logo to appear in Google search)
+User-agent: Googlebot-Image
+Allow: /
+Allow: /logo-512.svg
+Allow: /logo.svg
+Allow: /favicon.ico
+Disallow: /admin-xyz123/
 
 # Googlebot
 User-agent: Googlebot
 Allow: /
 Disallow: /admin-xyz123/
 Disallow: /api/
+Disallow: /unlock/
 
-# Host
 Host: https://unlockvault.xyz
 
-# Sitemaps
 Sitemap: https://unlockvault.xyz/sitemap.xml

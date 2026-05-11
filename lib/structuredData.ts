@@ -54,7 +54,7 @@ export const generateStructuredData = (props: StructuredDataProps) => {
           url: baseUrl,
           logo: {
             '@type': 'ImageObject',
-            url: `${baseUrl}/logo.svg`,
+            url: `${baseUrl}/logo-512.svg`,
             width: 512,
             height: 512
           },
@@ -90,7 +90,7 @@ export const generateStructuredData = (props: StructuredDataProps) => {
           name: 'UnlockVault',
           logo: {
             '@type': 'ImageObject',
-            url: `${baseUrl}/logo.svg`,
+            url: `${baseUrl}/logo-512.svg`,
             width: 512,
             height: 512
           }
@@ -134,7 +134,7 @@ export const generateStructuredData = (props: StructuredDataProps) => {
           name: 'UnlockVault',
           logo: {
             '@type': 'ImageObject',
-            url: `${baseUrl}/logo.svg`
+            url: `${baseUrl}/logo-512.svg`
           }
         },
         offers: {
@@ -169,7 +169,7 @@ export const generateStructuredData = (props: StructuredDataProps) => {
         url: baseUrl,
         logo: {
           '@type': 'ImageObject',
-          url: `${baseUrl}/logo.svg`,
+          url: `${baseUrl}/logo-512.svg`,
           width: 512,
           height: 512
         },
@@ -310,7 +310,7 @@ export const generateOrganizationSchema = (baseUrl: string): any => ({
   "name": "UnlockVault",
   "alternateName": "Unlock Vault",
   "url": baseUrl,
-  "logo": `${baseUrl}/logo.svg`,
+  "logo": `${baseUrl}/logo-512.svg`,
   "description": "Premium tools, apps, and games unlocked for free. Your gateway to exclusive digital content.",
   "foundingDate": "2024",
   "contactPoint": {
@@ -344,7 +344,7 @@ export const generateWebsiteSchema = (baseUrl: string): any => ({
     "name": "UnlockVault",
     "logo": {
       "@type": "ImageObject",
-      "url": `${baseUrl}/logo.svg`
+      "url": `${baseUrl}/logo-512.svg`
     }
   },
   "potentialAction": {
@@ -397,7 +397,7 @@ export const generateSoftwareSchema = (offer: OfferStructuredData, baseUrl: stri
       "name": "UnlockVault",
       "logo": {
         "@type": "ImageObject",
-        "url": `${baseUrl}/logo.svg`
+        "url": `${baseUrl}/logo-512.svg`
       }
     },
     "offers": {
@@ -498,7 +498,7 @@ export const generateReviewSchema = (testimonials: any[], baseUrl: string): any 
   "@type": "Product",
   "name": "UnlockVault Premium Tools Platform",
   "description": "Platform for accessing premium tools, apps, and games",
-  "image": `${baseUrl}/logo.svg`,
+  "image": `${baseUrl}/logo-512.svg`,
   "brand": {
     "@type": "Brand",
     "name": "UnlockVault"
