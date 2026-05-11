@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'supersecretkey');
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Add CORS headers for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const response = NextResponse.next();

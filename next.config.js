@@ -5,7 +5,15 @@ const nextConfig = {
   
   // Enhanced image optimization
   images: {
-    domains: ['localhost', 'unlockvault.xyz', 'cdn.unlockvault.xyz', 'unlockvault.com', 'cdn.unlockvault.com', 'i.pinimg.com', 'i.postimg.cc'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'unlockvault.xyz' },
+      { protocol: 'https', hostname: 'cdn.unlockvault.xyz' },
+      { protocol: 'https', hostname: 'unlockvault.com' },
+      { protocol: 'https', hostname: 'cdn.unlockvault.com' },
+      { protocol: 'https', hostname: 'i.pinimg.com' },
+      { protocol: 'https', hostname: 'i.postimg.cc' },
+    ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp', 'image/avif'],
@@ -19,6 +27,8 @@ const nextConfig = {
     scrollRestoration: true,
     optimizeCss: true,
   },
+  
+  turbopack: {},
   
   // Compression
   compress: true,
