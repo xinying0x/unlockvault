@@ -85,7 +85,7 @@ const OfferDetailPage = () => {
       setOffer({ ...data, lockerLinks: data.lockerLinks || {} });
     } catch (err: any) {
       console.error('Failed to fetch offer:', err);
-      setError(err.message || 'Failed to load offer data. Please try again later.');
+      setError(err.message || 'Failed to load data. Please try again later.');
       setOffer(null);
     } finally {
       setLoading(false);
@@ -279,8 +279,8 @@ const OfferDetailPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#18122B] via-[#2D1B5A] to-[#1A1A2E] text-white">
         <div className="text-center">
           <div className="text-6xl mb-4">❓</div>
-          <div className="text-2xl font-bold mb-2">Offer not found</div>
-          <p className="text-gray-400">The offer you're looking for doesn't exist.</p>
+          <div className="text-2xl font-bold mb-2">Content not found</div>
+          <p className="text-gray-400">The content you're looking for doesn't exist.</p>
           <button
             onClick={() => router.push('/')}
             className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -297,7 +297,7 @@ const OfferDetailPage = () => {
       case 'game': return 'Get Game';
       case 'app': return 'Get App';
       case 'tool': return 'Get Tool';
-      default: return 'Get Offer';
+      default: return 'Get Content';
     }
   };
 
@@ -414,7 +414,7 @@ const OfferDetailPage = () => {
 
               {offer.featured && (
                 <span className="inline-block bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 px-3 py-1 rounded-full text-xs font-medium mb-6">
-                  ⭐ Featured Offer
+                  ⭐ Featured
                 </span>
               )}
 
@@ -455,7 +455,7 @@ const OfferDetailPage = () => {
               {/* VPN Warning */}
               {isVpn && (
                 <div className="mt-4 p-3 bg-red-600/20 border border-red-500/30 text-red-300 rounded-lg text-sm text-center">
-                  VPN/Proxy detected. Some offers may not be available.
+                  VPN/Proxy detected. Some features may not be available.
                 </div>
               )}
             </div>

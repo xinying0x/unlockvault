@@ -217,12 +217,12 @@ const UnlockPage = () => {
   };
 
   const getAdTypeLabel = (ctype?: number) => {
-    if (!ctype) return 'Survey';
-    if (ctype & 1) return 'Install App';
-    if (ctype & 2) return 'Complete Task';
-    if (ctype & 4) return 'Enter PIN';
-    if (ctype & 8) return 'Watch Video';
-    return 'Complete Offer';
+    if (!ctype) return 'Quick Task';
+    if (ctype & 1) return 'Quick Install';
+    if (ctype & 2) return 'Quick Task';
+    if (ctype & 4) return 'Quick Verification';
+    if (ctype & 8) return 'Quick Video';
+    return 'Quick Task';
   };
 
   const getAdTypeColor = (ctype?: number) => {
@@ -368,7 +368,7 @@ const UnlockPage = () => {
         <title>
           {offer ? `Unlock ${offer.title} | UnlockVault` : 'Unlock Content | UnlockVault'}
         </title>
-        <meta name="description" content={offer?.description || 'Complete an offer to unlock your download.'} />
+        <meta name="description" content={offer?.description || 'Complete a quick verification to unlock your download.'} />
         <meta name="robots" content="noindex" />
       </Head>
 
@@ -437,7 +437,7 @@ const UnlockPage = () => {
                     </div>
                     <div className="min-w-0">
                       <h2 className="truncate text-xl font-black text-white">{offer.title}</h2>
-                      <p className="text-sm text-gray-300">Complete one offer to open the download gate.</p>
+                      <p className="text-sm text-gray-300">Complete one quick verification to access your download.</p>
                     </div>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-white/10">
@@ -462,7 +462,7 @@ const UnlockPage = () => {
                 </svg>
                 <h2 className="text-2xl font-black text-white mb-2">Your download is locked</h2>
                 <p className="text-gray-300 text-sm max-w-2xl mx-auto">
-                  Choose one of the two methods below to unlock <strong className="text-white">{offer?.title || 'your content'}</strong>: the quick shortlink (recommended) or a CPA offer.
+                  Choose one of the two methods below to unlock <strong className="text-white">{offer?.title || 'your content'}</strong>: the quick shortlink (recommended) or a free verification task.
                 </p>
               </div>
             ) : step === 'completing' ? (
@@ -526,10 +526,10 @@ const UnlockPage = () => {
                 >
                   <span className="flex items-center justify-center gap-2">
                     <span className="text-lg">🎁</span>
-                    <span>CPA Offers</span>
+                    <span>Quick Tasks</span>
                   </span>
                   <span className={`block text-[10px] font-normal mt-0.5 ${unlockMethod === 'cpa' ? 'text-pink-100' : 'text-gray-500'}`}>
-                    {adOffers.length > 0 ? `${adOffers.length} available` : 'Surveys & tasks'}
+                    {adOffers.length > 0 ? `${adOffers.length} available` : 'Quick &amp; easy'}
                   </span>
                 </button>
               </div>
@@ -555,7 +555,7 @@ const UnlockPage = () => {
                           </span>
                         </div>
                         <h4 className="text-2xl font-black text-white leading-tight">Quick Shortlink</h4>
-                        <p className="text-sm text-gray-400">Skip the surveys — fastest path to download</p>
+                        <p className="text-sm text-gray-400">Fastest path to download</p>
                       </div>
                     </div>
 
@@ -610,7 +610,7 @@ const UnlockPage = () => {
               </div>
             )}
 
-            {/* Method 2: CPA Offers */}
+            {/* Method 2: Quick Tasks */}
             {unlockMethod === 'cpa' && (
               <div className="animate-[fadeIn_0.3s_ease-out]">
                 {loadingOffers ? (
@@ -684,17 +684,10 @@ const UnlockPage = () => {
                             {/* Description */}
                             <div className="flex-1 mb-4">
                               <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">
-                                {adOffer.description || 'Follow the offer instructions in the new tab, then return here for verification.'}
+                                {adOffer.description || 'Follow the instructions in the new tab, then return here for verification.'}
                               </p>
-                              <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-                                {adOffer.payout && (
-                                  <span className="rounded-full border border-green-400/30 bg-green-400/10 px-2.5 py-0.5 font-semibold text-green-300">
-                                    💰 ${adOffer.payout}
-                                  </span>
-                                )}
-                                {adOffer.network && (
-                                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-gray-400">{adOffer.network}</span>
-                                )}
+                              {/* Payout/Network hidden for visitor privacy */}
+                            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
                                 {adOffer.platforms?.slice(0, 2).map((platform) => (
                                   <span key={platform} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-gray-400">{platform}</span>
                                 ))}
@@ -724,7 +717,7 @@ const UnlockPage = () => {
                                 </span>
                               ) : (
                                 <span className="flex items-center justify-center gap-2">
-                                  Start Offer
+                                  Start Task
                                   <span className="transition-transform group-hover:translate-x-0.5">→</span>
                                 </span>
                               )}
@@ -737,8 +730,8 @@ const UnlockPage = () => {
                 ) : (
                   <div className="max-w-xl mx-auto text-center py-10 px-6 bg-[#15102A]/80 rounded-3xl border border-white/10 backdrop-blur-xl">
                     <div className="text-5xl mb-4">📭</div>
-                    <p className="text-white font-bold mb-2">No CPA offers available right now</p>
-                    <p className="text-gray-400 text-sm mb-5">No surveys are currently available in your region.</p>
+                    <p className="text-white font-bold mb-2">No verification tasks available right now</p>
+                    <p className="text-gray-400 text-sm mb-5">No tasks are currently available in your region.</p>
                     <button
                       onClick={() => setUnlockMethod('shortlink')}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-950/30"
