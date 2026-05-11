@@ -34,7 +34,7 @@
     "jsonwebtoken": "^9.0.2",
     "jsqr": "^1.4.0",
     "mongodb": "^6.17.0",
-    "next": "^15.3.3",
+    "next": "latest",
     "next-seo": "^6.8.0",
     "next-sitemap": "latest",
     "qrcode": "^1.5.4",
